@@ -49,6 +49,7 @@ logging.set_verbosity(logging.WARNING)
 _ENV_NAME = flags.DEFINE_string(
     "env_name",
     "BerkeleyHumanoidJoystickFlatTerrain",
+    "BD5JoystickFlatTerrain",
     (
         "Name of the environment. One of: "
         f"{', '.join(mujoco_playground.registry.ALL_ENVS)}"

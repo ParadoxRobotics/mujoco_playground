@@ -23,6 +23,8 @@ from mujoco import mjx
 
 from mujoco_playground._src import mjx_env
 from mujoco_playground._src.locomotion.barkour import joystick as barkour_joystick
+from mujoco_playground._src.locomotion.bd5 import joystick as bd5_joystick
+from mujoco_playground._src.locomotion.bd5 import randomize as bd5_randomize
 from mujoco_playground._src.locomotion.berkeley_humanoid import joystick as berkeley_humanoid_joystick
 from mujoco_playground._src.locomotion.berkeley_humanoid import randomize as berkeley_humanoid_randomize
 from mujoco_playground._src.locomotion.g1 import joystick as g1_joystick
@@ -42,6 +44,12 @@ from mujoco_playground._src.locomotion.t1 import randomize as t1_randomize
 
 _envs = {
     "BarkourJoystick": barkour_joystick.Joystick,
+    "BD5JoystickFlatTerrain": functools.partial(
+        bd5_joystick.Joystick, task="flat_terrain"
+    ),
+    "BD5JoystickRoughTerrain": functools.partial(
+        bd5_joystick.Joystick, task="rough_terrain"
+    ),
     "BerkeleyHumanoidJoystickFlatTerrain": functools.partial(
         berkeley_humanoid_joystick.Joystick, task="flat_terrain"
     ),
@@ -83,6 +91,12 @@ _envs = {
 
 _cfgs = {
     "BarkourJoystick": barkour_joystick.default_config,
+    "BD5JoystickFlatTerrain": (
+        bd5_joystick.default_config
+    ),
+    "BD5JoystickRoughTerrain": (
+        bd5_joystick.default_config
+    ),
     "BerkeleyHumanoidJoystickFlatTerrain": (
         berkeley_humanoid_joystick.default_config
     ),
@@ -112,6 +126,12 @@ _randomizer = {
     ),
     "BerkeleyHumanoidJoystickRoughTerrain": (
         berkeley_humanoid_randomize.domain_randomize
+    ),
+    "BD5JoystickFlatTerrain": (
+        bd5_randomize.domain_randomize
+    ),
+    "BD5JoystickRoughTerrain": (
+        bd5_randomize.domain_randomize
     ),
     "G1JoystickFlatTerrain": g1_randomize.domain_randomize,
     "G1JoystickRoughTerrain": g1_randomize.domain_randomize,

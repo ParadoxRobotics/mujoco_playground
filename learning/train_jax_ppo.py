@@ -21,6 +21,8 @@ import os
 import time
 import warnings
 
+import pickle
+
 from absl import app
 from absl import flags
 from absl import logging
@@ -366,6 +368,17 @@ def main(argv):
   # Create inference function
   inference_fn = make_inference_fn(params, deterministic=True)
   jit_inference_fn = jax.jit(inference_fn)
+
+  # store the model
+  normalizer_params, policy_params, value_params = params
+  with open(ckpt_path / "params.pkl", "wb") as f:
+    data = {
+      "normalizer_params": normalizer_params,
+      "policy_params": policy_params,
+      "value_params": value_params,
+    }
+    pickle.dump(data, f)
+  print("Model saved as pkl.")
 
   # Prepare for evaluation
   num_envs = 1

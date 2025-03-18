@@ -129,14 +129,14 @@ class Joystick(berkeley_humanoid_base.BerkeleyHumanoidEnv):
     for side in ["LL", "LR"]:
       for joint_name in hip_joint_names:
         hip_indices.append(
-            self._mj_model.joint(f"{side}_{joint_name}").qposadr - 7
-        )
+            self._mj_model.joint(f"{side}_{joint_name}").qposadr - 7)
     self._hip_indices = jp.array(hip_indices)
 
     knee_indices = []
     for side in ["LL", "LR"]:
       knee_indices.append(self._mj_model.joint(f"{side}_KFE").qposadr - 7)
     self._knee_indices = jp.array(knee_indices)
+
 
     # fmt: off
     self._weights = jp.array([

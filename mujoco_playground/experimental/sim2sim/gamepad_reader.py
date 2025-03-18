@@ -24,7 +24,7 @@ import hid
 import numpy as np
 
 
-def _interpolate(value, old_max, new_scale, deadzone=0.01):
+def _interpolate(value, old_max, new_scale, deadzone):
   ret = value * new_scale / old_max
   if abs(ret) < deadzone:
     return 0.0
@@ -36,17 +36,19 @@ class Gamepad:
 
   def __init__(
       self,
-      vendor_id=0x046D,
-      product_id=0xC219,
+      vendor_id=0x054c,
+      product_id=0x05c4,
       vel_scale_x=0.4,
       vel_scale_y=0.4,
       vel_scale_rot=1.0,
+      deadzone=0.01,
   ):
     self._vendor_id = vendor_id
     self._product_id = product_id
     self._vel_scale_x = vel_scale_x
     self._vel_scale_y = vel_scale_y
     self._vel_scale_rot = vel_scale_rot
+    self._deadzone = deadzone
 
     self.vx = 0.0
     self.vy = 0.0
@@ -69,7 +71,7 @@ class Gamepad:
           f"{self._device.get_product_string()}"
       )
       return True
-    except (hid.HIDException, OSError) as e:
+    except OSError as e:
       print(f"Error connecting to device: {e}")
       return False
 
@@ -83,7 +85,7 @@ class Gamepad:
         data = self._device.read(64)
         if data:
           self.update_command(data)
-      except (hid.HIDException, OSError) as e:
+      except OSError as e:
         print(f"Error reading from device: {e}")
 
     self._device.close()
@@ -93,9 +95,9 @@ class Gamepad:
     left_y = -(data[2] - 128) / 128.0
     right_x = -(data[3] - 128) / 128.0
 
-    self.vx = _interpolate(left_y, 1.0, self._vel_scale_x)
-    self.vy = _interpolate(left_x, 1.0, self._vel_scale_y)
-    self.wz = _interpolate(right_x, 1.0, self._vel_scale_rot)
+    self.vx = _interpolate(left_y, 1.0, self._vel_scale_x, self._deadzone)
+    self.vy = _interpolate(left_x, 1.0, self._vel_scale_y, self._deadzone)
+    self.wz = _interpolate(right_x, 1.0, self._vel_scale_rot, self._deadzone)
 
   def get_command(self):
     return np.array([self.vx, self.vy, self.wz])
