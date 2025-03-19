@@ -79,7 +79,7 @@ def default_config() -> config_dict.ConfigDict:
               feet_air_time=0.0, # was 2.0
               feet_slip=-0.1, # was -0.25
               feet_height=0.0,
-              feet_phase=0.0, # was -1.0
+              feet_phase=-1.0, # was -1.0
               # Other rewards.
               stand_still=-0.5, # penalize when command = 0
               alive=0.0,
@@ -92,7 +92,7 @@ def default_config() -> config_dict.ConfigDict:
               pose=-1.0,
           ),
           tracking_sigma=0.25, # test it with 0.01
-          max_foot_height=0.07, # 0.1
+          max_foot_height=0.04, # 0.1
           base_height_target=0.25, # 0.5
       ),
       push_config=config_dict.create(
@@ -659,6 +659,7 @@ class Joystick(bd5_base.BD5Env):
         reward *= cmd_norm > 0.01  # No reward for zero commands.
         return jp.nan_to_num(reward)
 
+    # TODO : enforce flat feet with multiple site on the feet 
     def _reward_feet_phase(
         self,
         data: mjx.Data,

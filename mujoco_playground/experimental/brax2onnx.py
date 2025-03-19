@@ -16,8 +16,8 @@ from tensorflow.keras import layers
 import onnxruntime as rt
 from brax.training.acme import running_statistics
 
-#env_name = "BD5JoystickFlatTerrain"
-env_name = "BerkeleyHumanoidJoystickFlatTerrain"
+env_name = "BD5JoystickFlatTerrain"
+#env_name = "BerkeleyHumanoidJoystickFlatTerrain"
 # ppo_params = locomotion_params.brax_ppo_config(env_name)
 ppo_params = locomotion_params.brax_ppo_config(env_name)
 
@@ -42,14 +42,14 @@ print(obs_size, act_size)
 
 ppo_network = network_factory(obs_size, act_size)
 
-ckpt_path = "/home/master/mujoco_playground/learning/logs/BerkeleyHumanoidJoystickFlatTerrain-20250318-233234/checkpoints"
+ckpt_path = "/home/master/mujoco_playground/learning/logs/BD5JoystickFlatTerrain-20250319-083909/checkpoints"
 ckpt_path = ckpt_path + "/params.pkl"
 
 with open(ckpt_path, 'rb') as f:
     params = pickle.load(f)
 print(params.keys())
 
-output_path = f"bh2_policy.onnx"
+output_path = f"bdtest_policy.onnx"
 
 params = (params["normalizer_params"], params["policy_params"])
 make_inference_fn = ppo_networks.make_inference_fn(ppo_network)
