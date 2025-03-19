@@ -146,6 +146,7 @@ def load_callback(model=None, data=None):
       vel_scale_x=1.0,
       vel_scale_y=1.0,
       vel_scale_rot=1.0,
+      gait_freq=1.5,
   )
 
   mujoco.set_mjcb_control(policy.get_control)
