@@ -138,7 +138,7 @@ def load_callback(model=None, data=None):
   model.opt.timestep = sim_dt
 
   policy = OnnxController(
-      policy_path=(_ONNX_DIR / "bdtest_policy.onnx").as_posix(),
+      policy_path=(_ONNX_DIR / "bd_phaseop32_policy.onnx").as_posix(),
       default_angles=np.array(model.keyframe("init_pose").qpos[7:]),
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
@@ -152,7 +152,6 @@ def load_callback(model=None, data=None):
   mujoco.set_mjcb_control(policy.get_control)
 
   return model, data
-
 
 if __name__ == "__main__":
   viewer.launch(loader=load_callback)

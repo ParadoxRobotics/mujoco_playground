@@ -42,14 +42,14 @@ print(obs_size, act_size)
 
 ppo_network = network_factory(obs_size, act_size)
 
-ckpt_path = "/home/master/mujoco_playground/learning/logs/BD5JoystickFlatTerrain-20250319-083909/checkpoints"
+ckpt_path = "/home/master/mujoco_playground/learning/logs/BD5JoystickFlatTerrain-20250319-164559_OP3PHASE2/checkpoints"
 ckpt_path = ckpt_path + "/params.pkl"
 
 with open(ckpt_path, 'rb') as f:
     params = pickle.load(f)
 print(params.keys())
 
-output_path = f"bdtest_policy.onnx"
+output_path = f"bd_phaseop32_policy.onnx"
 
 params = (params["normalizer_params"], params["policy_params"])
 make_inference_fn = ppo_networks.make_inference_fn(ppo_network)

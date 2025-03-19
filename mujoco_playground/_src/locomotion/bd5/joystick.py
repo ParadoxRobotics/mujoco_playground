@@ -79,7 +79,7 @@ def default_config() -> config_dict.ConfigDict:
               feet_air_time=0.0, # was 2.0
               feet_slip=-0.1, # was -0.25
               feet_height=0.0,
-              feet_phase=-1.0, # was -1.0
+              feet_phase=0.0, # was -1.0
               # Other rewards.
               stand_still=-0.5, # penalize when command = 0
               alive=0.0,
@@ -100,9 +100,9 @@ def default_config() -> config_dict.ConfigDict:
           interval_range=[5.0, 10.0],
           magnitude_range=[0.1, 2.0],
       ),
-        lin_vel_x=[-1.0, 1.0],
+        lin_vel_x=[-0.6, 1.5],
         lin_vel_y=[-0.8, 0.8],
-        ang_vel_yaw=[-1.0, 1.0],
+        ang_vel_yaw=[-0.7, 0.7],
   )
 
 class Joystick(bd5_base.BD5Env):
