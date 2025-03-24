@@ -22,7 +22,7 @@ import onnxruntime as rt
 
 from mujoco_playground._src.locomotion.bd5 import bd5_constants
 from mujoco_playground._src.locomotion.bd5.base import get_assets
-from mujoco_playground.experimental.sim2sim.gamepad_reader import Gamepad
+from mujoco_playground.experimental.sim2sim.gamepad_reader_bd5 import Gamepad
 
 _HERE = epath.Path(__file__).parent
 _ONNX_DIR = _HERE / "onnx"
@@ -37,35 +37,45 @@ class OnnxController:
       default_angles: np.ndarray,
       ctrl_dt: float,
       n_substeps: int,
-      action_scale: float = 0.5,
-      vel_scale_x: float = 1.0,
-      vel_scale_y: float = 1.0,
-      vel_scale_rot: float = 1.0,
+      action_scale: float = 0.3,
+      vel_range_x: float = [-0.6, 1.5],
+      vel_range_y: float = [-0.8, 0.8],
+      vel_range_rot: float = [-0.7, 0.7],
       gait_freq:float = 1.5,
+      max_motor_speed: float = 4.82,
   ):
     self._output_names = ["continuous_actions"]
     self._policy = rt.InferenceSession(
         policy_path, providers=["CPUExecutionProvider"]
     )
 
+    # Init action memory
     self._action_scale = action_scale
     self._default_angles = default_angles
     self._last_action = np.zeros_like(default_angles, dtype=np.float32)
     self._last_last_action = np.zeros_like(default_angles, dtype=np.float32)
     self._last_last_last_action = np.zeros_like(default_angles, dtype=np.float32)
 
+    # Init motor targets
+    self.max_motor_speed = max_motor_speed
+    self.motor_targets = self._default_angles
+    self.prev_motor_targets = self._default_angles
+
+    # Time management
     self._counter = 0
     self._n_substeps = n_substeps
     self._ctrl_dt = ctrl_dt
 
+    # Phase init -> in real case self._ctrl_dt = self._n_substeps * self._sim_dt
     self._phase = np.array([0.0, np.pi])
     self._gait_freq = gait_freq
-    self._phase_dt = 2 * np.pi * self._gait_freq * ctrl_dt
+    self._phase_dt = 2 * np.pi * self._gait_freq * self._ctrl_dt 
 
+    # Init joystick
     self._joystick = Gamepad(
-        vel_scale_x=vel_scale_x,
-        vel_scale_y=vel_scale_y,
-        vel_scale_rot=vel_scale_rot,
+        vel_range_x=vel_range_x,
+        vel_range_y=vel_range_y,
+        vel_range_rot=vel_range_rot,
         deadzone=0.03,
     )
 
@@ -98,6 +108,7 @@ class OnnxController:
         self._last_action,
         self._last_last_action,
         self._last_last_last_action,
+        self.model_targets,
         phase,
     ])
     return obs.astype(np.float32)
@@ -114,9 +125,16 @@ class OnnxController:
       self._last_last_last_action = self._last_last_action.copy()
       self._last_last_action = self._last_action.copy()
       self._last_action = onnx_pred.copy()
+      # update motor targets -> in real case self._ctrl_dt = self._n_substeps * self._sim_dt
+      self.motor_targets = self._default_angles + onnx_pred * self._action_scale
+      self.motor_targets = np.clip(self.motor_targets, 
+                                self.prev_motor_targets - self.max_motor_speed * (self._ctrl_dt),
+                                self.prev_motor_targets + self.max_motor_speed * (self._ctrl_dt)
+                                )
+      self.prev_motor_targets = self.motor_targets.copy()
       # apply control
       data.ctrl[:] = onnx_pred * self._action_scale + self._default_angles
-      # update phase
+      # update phase 
       phase_tp1 = self._phase + self._phase_dt
       self._phase = np.fmod(phase_tp1 + np.pi, 2 * np.pi) - np.pi
 
@@ -138,15 +156,16 @@ def load_callback(model=None, data=None):
   model.opt.timestep = sim_dt
 
   policy = OnnxController(
-      policy_path=(_ONNX_DIR / "bd_phaseop32_policy.onnx").as_posix(),
+      policy_path=(_ONNX_DIR / "bd5_test_policy.onnx").as_posix(),
       default_angles=np.array(model.keyframe("init_pose").qpos[7:]),
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
       action_scale=0.3,
-      vel_scale_x=1.0,
-      vel_scale_y=1.0,
-      vel_scale_rot=1.0,
+      vel_range_x=[-0.6, 1.5],
+      vel_range_y=[-0.8, 0.8],
+      vel_range_rot=[-0.7, 0.7],
       gait_freq=1.5,
+      max_motor_speed=4.82,
   )
 
   mujoco.set_mjcb_control(policy.get_control)

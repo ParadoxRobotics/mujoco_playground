@@ -17,7 +17,7 @@ import onnxruntime as rt
 from brax.training.acme import running_statistics
 
 env_name = "BD5JoystickFlatTerrain"
-#env_name = "BerkeleyHumanoidJoystickFlatTerrain"
+# env_name = "BerkeleyHumanoidJoystickFlatTerrain"
 # ppo_params = locomotion_params.brax_ppo_config(env_name)
 ppo_params = locomotion_params.brax_ppo_config(env_name)
 
@@ -42,14 +42,14 @@ print(obs_size, act_size)
 
 ppo_network = network_factory(obs_size, act_size)
 
-ckpt_path = "/home/master/mujoco_playground/learning/logs/BD5JoystickFlatTerrain-20250319-164559_OP3PHASE2/checkpoints"
+ckpt_path = "/home/master/mujoco_playground/learning/logs/BD5JoystickFlatTerrain-20250320-142246/checkpoints"
 ckpt_path = ckpt_path + "/params.pkl"
 
 with open(ckpt_path, 'rb') as f:
     params = pickle.load(f)
 print(params.keys())
 
-output_path = f"bd_phaseop32_policy.onnx"
+output_path = f"bd5_test_policy.onnx"
 
 params = (params["normalizer_params"], params["policy_params"])
 make_inference_fn = ppo_networks.make_inference_fn(ppo_network)
