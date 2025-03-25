@@ -27,7 +27,6 @@ from mujoco_playground.experimental.sim2sim.gamepad_reader_bd5 import Gamepad
 _HERE = epath.Path(__file__).parent
 _ONNX_DIR = _HERE / "onnx"
 
-
 class OnnxController:
   """ONNX controller for the BD-5."""
 
@@ -38,10 +37,10 @@ class OnnxController:
       ctrl_dt: float,
       n_substeps: int,
       action_scale: float = 0.3,
-      vel_range_x: float = [-0.6, 1.5],
-      vel_range_y: float = [-0.8, 0.8],
-      vel_range_rot: float = [-0.7, 0.7],
-      gait_freq:float = 1.5,
+      vel_range_x: float = [-1.0, 1.0],
+      vel_range_y: float = [-1.0, 1.0],
+      vel_range_rot: float = [-1.0, 1.0],
+      gait_freq:float = 1.25,
       max_motor_speed: float = 4.82,
   ):
     self._output_names = ["continuous_actions"]
@@ -87,7 +86,7 @@ class OnnxController:
     # get gravity
     imu_xmat = data.site_xmat[model.site("imu").id].reshape(3, 3)
     gravity = imu_xmat.T @ np.array([0, 0, -1])
-    # get joint angles and velocities
+    # get joint angles delta and velocities
     joint_angles = data.qpos[7:] - self._default_angles
     joint_velocities = data.qvel[6:]
     # get command
@@ -108,7 +107,6 @@ class OnnxController:
         self._last_action,
         self._last_last_action,
         self._last_last_last_action,
-        self.model_targets,
         phase,
     ])
     return obs.astype(np.float32)
@@ -126,14 +124,14 @@ class OnnxController:
       self._last_last_action = self._last_action.copy()
       self._last_action = onnx_pred.copy()
       # update motor targets -> in real case self._ctrl_dt = self._n_substeps * self._sim_dt
-      self.motor_targets = self._default_angles + onnx_pred * self._action_scale
+      self.motor_targets = onnx_pred * self._action_scale + self._default_angles
       self.motor_targets = np.clip(self.motor_targets, 
                                 self.prev_motor_targets - self.max_motor_speed * (self._ctrl_dt),
                                 self.prev_motor_targets + self.max_motor_speed * (self._ctrl_dt)
                                 )
       self.prev_motor_targets = self.motor_targets.copy()
       # apply control
-      data.ctrl[:] = onnx_pred * self._action_scale + self._default_angles
+      data.ctrl[:] = self.motor_targets
       # update phase 
       phase_tp1 = self._phase + self._phase_dt
       self._phase = np.fmod(phase_tp1 + np.pi, 2 * np.pi) - np.pi
@@ -151,7 +149,7 @@ def load_callback(model=None, data=None):
   mujoco.mj_resetDataKeyframe(model, data, 0)
 
   ctrl_dt = 0.02
-  sim_dt = 0.004 # was 0.002
+  sim_dt = 0.002 # was 0.002
   n_substeps = int(round(ctrl_dt / sim_dt))
   model.opt.timestep = sim_dt
 
@@ -161,10 +159,10 @@ def load_callback(model=None, data=None):
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
       action_scale=0.3,
-      vel_range_x=[-0.6, 1.5],
-      vel_range_y=[-0.8, 0.8],
-      vel_range_rot=[-0.7, 0.7],
-      gait_freq=1.5,
+      vel_range_x=[-1.0, 1.0],
+      vel_range_y=[-1.0, 1.0],
+      vel_range_rot=[-1.0, 1.0],
+      gait_freq=1.25,
       max_motor_speed=4.82,
   )
 
