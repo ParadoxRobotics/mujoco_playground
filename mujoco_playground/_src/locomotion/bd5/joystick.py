@@ -94,7 +94,7 @@ def default_config() -> config_dict.ConfigDict:
               pose=-1.0, # TEST IT (was -1.0)
           ),
           tracking_sigma=0.25, # test it with 0.01
-          max_foot_height=0.07, # 0.1
+          max_foot_height=0.04, # 0.1
           base_height_target=0.25, # 0.5
       ),
       push_config=config_dict.create(
@@ -221,7 +221,7 @@ class Joystick(bd5_base.BD5Env):
 
         # Phase, freq=U(1.25, 1.5)
         rng, key = jax.random.split(rng)
-        gait_freq = jax.random.uniform(key, (1,), minval=1.0, maxval=1.5)
+        gait_freq = jax.random.uniform(key, (1,), minval=1.25, maxval=1.5)
         phase_dt = 2 * jp.pi * self.dt * gait_freq
         phase = jp.array([0, jp.pi])
 
