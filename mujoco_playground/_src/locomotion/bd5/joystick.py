@@ -77,7 +77,7 @@ def default_config() -> config_dict.ConfigDict:
               action_rate=-0.01, # penalize rapid changes in action
               energy=-0.0001, # penalize ernergy consumption -0.0001
               # Feet related rewards.
-              feet_clearance=-0.5, # -> test at -1.0
+              feet_clearance=-1.0, # -> was -0.5
               feet_air_time=2.0, # was 2.0
               feet_slip=-0.25, # was -0.25
               feet_height=0.0,
@@ -88,10 +88,10 @@ def default_config() -> config_dict.ConfigDict:
               termination=-1.0,
               # Pose related rewards.
               joint_deviation_ankle=0.0, # was -0.25
-              joint_deviation_knee=-0.1, # was -0.1
-              joint_deviation_hip=-0.25, # was -0.25
+              joint_deviation_knee=0.0, # was -0.1
+              joint_deviation_hip=0.0, # was -0.25
               dof_pos_limits=-1.0,
-              pose=-1.0, # TEST IT (was -1.0)
+              pose=0.0, # TEST IT (was -1.0)
           ),
           tracking_sigma=0.25, # test it with 0.01
           max_foot_height=0.04, # 0.1
@@ -221,7 +221,7 @@ class Joystick(bd5_base.BD5Env):
 
         # Phase, freq=U(1.25, 1.5)
         rng, key = jax.random.split(rng)
-        gait_freq = jax.random.uniform(key, (1,), minval=1.25, maxval=1.5)
+        gait_freq = jax.random.uniform(key, (1,), minval=1.0, maxval=1.5)
         phase_dt = 2 * jp.pi * self.dt * gait_freq
         phase = jp.array([0, jp.pi])
 
