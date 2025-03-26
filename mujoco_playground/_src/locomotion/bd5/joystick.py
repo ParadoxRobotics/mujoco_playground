@@ -68,14 +68,14 @@ def default_config() -> config_dict.ConfigDict:
               tracking_lin_vel=1.0, # follow the joystick command x, y
               tracking_ang_vel=0.5, # follow the joystick command theta
               # Base related rewards.
-              lin_vel_z=0.0,
-              ang_vel_xy=-0.15,
-              orientation=-1.0, # body orientation from gravity 
+              lin_vel_z=-2.0,
+              ang_vel_xy=-0.05,
+              orientation=-5.0, # body orientation from gravity 
               base_height=0.0,
               # Energy related rewards.
-              torques=-0.0002, # penalize high torques
+              torques=-0.0002, # penalize high torques -0.0002
               action_rate=-0.01, # penalize rapid changes in action
-              energy=-0.0001,
+              energy=-0.0001, # penalize ernergy consumption -0.0001
               # Feet related rewards.
               feet_clearance=-0.5, # -> test at -1.0
               feet_air_time=2.0, # was 2.0
@@ -347,6 +347,11 @@ class Joystick(bd5_base.BD5Env):
         state.info["push_step"] += 1
         phase_tp1 = state.info["phase"] + state.info["phase_dt"]
         state.info["phase"] = jp.fmod(phase_tp1 + jp.pi, 2 * jp.pi) - jp.pi
+        state.info["phase"] = jp.where(
+            jp.linalg.norm(state.info["command"]) > 0.01,
+            state.info["phase"],
+            jp.ones(2) * jp.pi,
+        )
         state.info["last_last_last_act"] = state.info["last_last_act"]
         state.info["last_last_act"] = state.info["last_act"]
         state.info["last_act"] = action
@@ -666,7 +671,7 @@ class Joystick(bd5_base.BD5Env):
         air_time = (air_time - threshold_min) * first_contact
         air_time = jp.clip(air_time, max=threshold_max - threshold_min)
         reward = jp.sum(air_time)
-        reward *= cmd_norm > 0.01  # No reward for zero commands.
+        reward *= cmd_norm > 0.1  # No reward for zero commands.
         return jp.nan_to_num(reward)
 
     def _reward_feet_phase(

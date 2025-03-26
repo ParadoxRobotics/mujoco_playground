@@ -62,7 +62,7 @@
                 <joint name="left_ankle" pos="0 0 0" axis="0 1 0" range="-1.8873 1.8873" actuatorfrcrange="-4.1 4.1" damping="1.084" armature="0.045" frictionloss="0.03" />
                 <geom name="collision_foot_left" type="mesh" mesh="FOOT_LEFT_COLLISION" class="collision" />
                 <geom type="mesh" rgba="0.9098 0.44314 0.031373 1" mesh="FOOT_LEFT" class="visualgeom" />
-                <site name="left_foot_site" size="0.010" pos="0 0 -0.048"/>
+                <site group="0" name="left_foot_site" pos="0 0 -0.048"/>
               </body>
             </body>
           </body>
@@ -89,7 +89,7 @@
                 <joint name="right_ankle" pos="0 0 0" axis="0 1 0" range="-1.8873 1.8873" actuatorfrcrange="-4.1 4.1" damping="1.084" armature="0.045" frictionloss="0.03" />
                 <geom name="collision_foot_right" type="mesh" mesh="FOOT_RIGHT_COLLISION" class="collision" />
                 <geom type="mesh" rgba="0.9098 0.44314 0.031373 1" mesh="FOOT_RIGHT" class="visualgeom" />
-                <site name="right_foot_site" size="0.010" pos="0 0 -0.048"/>
+                <site group="0" name="right_foot_site" pos="0 0 -0.048"/>
               </body>
             </body>
           </body>
