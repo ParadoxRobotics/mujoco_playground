@@ -1,0 +1,54 @@
+{
+    "Kd": 1.084,
+    "Kp": 21.1,
+    "action_repeat": 1,
+    "action_scale": 0.3,
+    "ang_vel_yaw": [
+        -0.7,
+        0.7
+    ],
+    "ctrl_dt": 0.02,
+    "early_termination": true,
+    "episode_length": 1000,
+    "kick_durations": [
+        0.05,
+        0.2
+    ],
+    "kick_wait_times": [
+        1.0,
+        3.0
+    ],
+    "lin_vel_x": [
+        -0.6,
+        1.5
+    ],
+    "lin_vel_y": [
+        -0.8,
+        0.8
+    ],
+    "max_foot_height": 0.07,
+    "obs_history_size": 3,
+    "obs_noise": 0.05,
+    "reward_config": {
+        "scales": {
+            "action_rate": -0.01,
+            "ang_vel_xy": -0.05,
+            "energy": -0.0001,
+            "feet_clearance": 0.0,
+            "feet_slip": -0.1,
+            "lin_vel_z": -2.0,
+            "orientation": -5.0,
+            "termination": -1.0,
+            "torques": -0.0002,
+            "tracking_ang_vel": 0.8,
+            "tracking_lin_vel": 1.5,
+            "zero_cmd": -0.5
+        },
+        "tracking_sigma": 0.25
+    },
+    "sim_dt": 0.004,
+    "velocity_kick": [
+        1.0,
+        5.0
+    ]
+}
