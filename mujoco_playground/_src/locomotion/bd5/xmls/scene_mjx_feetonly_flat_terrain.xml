@@ -29,7 +29,7 @@
   <keyframe>
     <key name="init_pose"
       qpos="
-      0 0 0.275
+      0 0 0.224
       1 0 0 0
       0.0
       0.0

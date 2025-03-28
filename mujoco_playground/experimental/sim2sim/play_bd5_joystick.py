@@ -48,7 +48,7 @@ class OnnxController:
         policy_path, providers=["CPUExecutionProvider"]
     )
 
-    # Init action memory
+    # Init action scale and memory
     self._action_scale = action_scale
     self._default_angles = default_angles
     self._last_action = np.zeros_like(default_angles, dtype=np.float32)
@@ -84,8 +84,8 @@ class OnnxController:
     # get accelerometer
     accelerometer = data.sensor("accelerometer").data
     # get gravity
-    imu_xmat = data.site_xmat[model.site("imu").id].reshape(3, 3)
-    gravity = imu_xmat.T @ np.array([0, 0, -1])
+    #imu_xmat = data.site_xmat[model.site("imu").id].reshape(3, 3)
+    #gravity = imu_xmat.T @ np.array([0, 0, -1])
     # get joint angles delta and velocities
     joint_angles = data.qpos[7:] - self._default_angles
     joint_velocities = data.qvel[6:]
@@ -94,13 +94,14 @@ class OnnxController:
     # adjust phase
     ph = self._phase if np.linalg.norm(command) >= 0.01 else np.ones(2) * np.pi
     phase = np.concatenate([np.cos(ph), np.sin(ph)])
-    joint_angles[:2] *= 0.0
-    joint_velocities[:2] *= 0.0
+    # TODO : WTF is that !!!!!!!
+    #joint_angles[:2] *= 0.0
+    #joint_velocities[:2] *= 0.0
     # concatenate all
     obs = np.hstack([
         gyro,
         accelerometer,
-        gravity,
+        #gravity,
         command,
         joint_angles,
         joint_velocities,
@@ -162,7 +163,7 @@ def load_callback(model=None, data=None):
       vel_range_x=[-1.0, 1.0],
       vel_range_y=[-1.0, 1.0],
       vel_range_rot=[-1.0, 1.0],
-      gait_freq=1.0,
+      gait_freq=1.5,
       max_motor_speed=4.82,
   )
 

@@ -29,7 +29,7 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
         # Floor friction: =U(0.4, 1.0).
         rng, key = jax.random.split(rng)
         geom_friction = model.geom_friction.at[FLOOR_GEOM_ID, 0].set(
-            jax.random.uniform(key, minval=0.4, maxval=1.0)
+            jax.random.uniform(key, minval=0.5, maxval=1.0)
         )
 
         # Joint frictionloss: *U(0.9, 1.2).
@@ -60,9 +60,9 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
             body_mass[TORSO_BODY_ID] + dmass
         )
 
-        # Jitter center of mass position: +U(-0.07, 0.07).
+        # Jitter center of mass position: +U(-0.05, 0.05).
         rng, key = jax.random.split(rng)
-        dpos = jax.random.uniform(key, (3,), minval=-0.07, maxval=0.07) 
+        dpos = jax.random.uniform(key, (3,), minval=-0.05, maxval=0.05) 
         body_ipos = model.body_ipos.at[TORSO_BODY_ID].set(
             model.body_ipos[TORSO_BODY_ID] + dpos
         )
