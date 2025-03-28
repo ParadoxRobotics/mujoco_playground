@@ -94,9 +94,6 @@ class OnnxController:
     # adjust phase
     ph = self._phase if np.linalg.norm(command) >= 0.01 else np.ones(2) * np.pi
     phase = np.concatenate([np.cos(ph), np.sin(ph)])
-    # TODO : WTF is that !!!!!!!
-    #joint_angles[:2] *= 0.0
-    #joint_velocities[:2] *= 0.0
     # concatenate all
     obs = np.hstack([
         gyro,
