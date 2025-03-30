@@ -68,18 +68,18 @@ def default_config() -> config_dict.ConfigDict:
               tracking_lin_vel=1.0, # follow the joystick command x, y 1.0
               tracking_ang_vel=0.5, # follow the joystick command theta 0.8
               # Base related rewards.
-              lin_vel_z=0.0,
-              ang_vel_xy=0.0,
+              lin_vel_z=-2.0,
+              ang_vel_xy=-0.05,
               orientation=-5.0, # body orientation from gravity 
               base_height=0.0,
               # Energy related rewards.
-              torques= -0.00001, # penalize high torques -0.0002
+              torques= -0.0002, # penalize high torques -0.0002
               action_rate=-0.01, # penalize rapid changes in action -0.001
-              energy=0.0002, # penalize ernergy consumption -0.0001
+              energy=0.0001, # penalize ernergy consumption -0.0001
               # Feet related rewards.
-              feet_clearance=0.05, # -> was -0.5
-              feet_air_time=0.0, # was 2.0
-              feet_slip=0.0, # was -0.25
+              feet_clearance=-1.0, # -> was -0.5
+              feet_air_time=2.0, # was 2.0
+              feet_slip=-0.25, # was -0.25
               feet_height=0.0,
               feet_phase=1.0, # was 1.0
               # Other rewards.
@@ -88,8 +88,8 @@ def default_config() -> config_dict.ConfigDict:
               termination=-1.0,
               # Pose related rewards.
               joint_deviation_ankle=0.0, # was -0.25
-              joint_deviation_knee=0.0, # was -0.1
-              joint_deviation_hip=0.0, # was -0.25
+              joint_deviation_knee=-0.1, # was -0.1
+              joint_deviation_hip=-0.25, # was -0.25
               dof_pos_limits=-1.0,
               pose=-1.0, # TEST IT (was -1.0)
           ),
@@ -639,14 +639,8 @@ class Joystick(bd5_base.BD5Env):
     # TODO : other formulation of the feet slip reward
     def _cost_feet_slip(self, data: mjx.Data, contact: jax.Array, info: dict[str, Any]) -> jax.Array:
         del info  # Unused.
-        """
         body_vel = self.get_global_linvel(data)[:2]
-        reward = jp.sum(jp.linalg.norm(body_vel, axis=-1) * contact)"
-        """""
-        feet_vel = data.sensordata[self._foot_linvel_sensor_adr]
-        vel_xy = feet_vel[..., :2]
-        vel_xy_norm_sq = jp.sum(jp.square(vel_xy), axis=-1)
-        reward = jp.sum(vel_xy_norm_sq * contact)
+        reward = jp.sum(jp.linalg.norm(body_vel, axis=-1) * contact)
         return jp.nan_to_num(reward)
 
     def _cost_feet_clearance(self, data: mjx.Data, info: dict[str, Any]) -> jax.Array:
@@ -691,7 +685,7 @@ class Joystick(bd5_base.BD5Env):
         foot_height: jax.Array,
         commands: jax.Array,
     ) -> jax.Array:
-        # Reward for tracking the desired foot height.
+        # Reward for tracking the desired foot height under phase 
         foot_pos = data.site_xpos[self._feet_site_id]
         foot_z = foot_pos[..., -1]
         rz = gait.get_rz(phase, swing_height=foot_height)
@@ -706,6 +700,16 @@ class Joystick(bd5_base.BD5Env):
         mask = jp.logical_and(linvel_mask, jp.linalg.norm(commands) > 0.01)
         reward *= mask
         return jp.nan_to_num(reward)
+    
+    def _flat_feet(
+            self,
+            data,
+    ) -> jax.Array:
+        # reward feet flatness 
+        foot_pos = data.site_xpos[self._feet_site_id]
+        foot_z = foot_pos[..., -1]
+        
+        
 
     def sample_command(self, rng: jax.Array) -> jax.Array:
         rng1, rng2, rng3, rng4 = jax.random.split(rng, 4)

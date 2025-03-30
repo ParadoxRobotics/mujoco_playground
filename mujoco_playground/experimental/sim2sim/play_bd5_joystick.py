@@ -160,7 +160,7 @@ def load_callback(model=None, data=None):
       vel_range_x=[-1.0, 1.0],
       vel_range_y=[-1.0, 1.0],
       vel_range_rot=[-1.0, 1.0],
-      gait_freq=1.5,
+      gait_freq=1.0,
       max_motor_speed=4.82,
   )
 

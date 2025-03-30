@@ -62,7 +62,9 @@
                 <joint name="left_ankle" pos="0 0 0" axis="0 1 0" range="-1.8873 1.8873" actuatorfrcrange="-4.1 4.1" damping="1.084" armature="0.045" frictionloss="0.03" />
                 <geom name="collision_foot_left" type="mesh" mesh="FOOT_LEFT_COLLISION" class="collision" />
                 <geom type="mesh" rgba="0.9098 0.44314 0.031373 1" mesh="FOOT_LEFT" class="visualgeom" />
-                <site group="0" name="left_foot_site" pos="0 0 -0.048"/>
+                <site name="left_foot_site" pos="0 0 -0.048"/>
+                <site name="left_foot_front_site" pos="0.065 0 -0.048"/>
+                <site name="left_foot_back_site" pos="-0.065 0 -0.048"/>
               </body>
             </body>
           </body>
@@ -89,7 +91,9 @@
                 <joint name="right_ankle" pos="0 0 0" axis="0 1 0" range="-1.8873 1.8873" actuatorfrcrange="-4.1 4.1" damping="1.084" armature="0.045" frictionloss="0.03" />
                 <geom name="collision_foot_right" type="mesh" mesh="FOOT_RIGHT_COLLISION" class="collision" />
                 <geom type="mesh" rgba="0.9098 0.44314 0.031373 1" mesh="FOOT_RIGHT" class="visualgeom" />
-                <site group="0" name="right_foot_site" pos="0 0 -0.048"/>
+                <site name="right_foot_site" pos="0 0 -0.048"/>
+                <site name="right_foot_front_site" pos="0.065 0 -0.048"/>
+                <site name="right_foot_back_site" pos="-0.065 0 -0.048"/>
               </body>
             </body>
           </body>
@@ -121,9 +125,17 @@
     <framelinvel objtype="site" objname="imu" name="global_linvel"/>
     <frameangvel objtype="site" objname="imu" name="global_angvel"/>
     <framequat objtype="site" objname="imu" name="orientation"/>
+    
     <framelinvel objtype="site" objname="left_foot_site" name="left_foot_global_linvel"/>
     <framelinvel objtype="site" objname="right_foot_site" name="right_foot_global_linvel"/>
+
     <framepos objtype="site" objname="left_foot_site" name="left_foot_pos"/>
     <framepos objtype="site" objname="right_foot_site" name="right_foot_pos"/>
+
+    <framepos objtype="site" objname="left_foot_front_site" name="left_foot_front_pos"/>
+    <framepos objtype="site" objname="left_foot_back_site" name="left_foot_back_pos"/>
+
+    <framepos objtype="site" objname="right_foot_front_site" name="right_foot_front_pos"/>
+    <framepos objtype="site" objname="right_foot_back_site" name="right_foot_back_pos"/>
   </sensor>
 </mujoco>
