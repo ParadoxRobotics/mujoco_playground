@@ -40,7 +40,7 @@ def default_config() -> config_dict.ConfigDict:
       sim_dt=0.002,
       episode_length=1000,
       action_repeat=1,
-      action_scale=0.3,
+      action_scale=0.5,
       dof_vel_scale=1.0, # 0.05
       history_len=1,
       soft_joint_pos_limit_factor=0.95,
@@ -55,31 +55,31 @@ def default_config() -> config_dict.ConfigDict:
               hip_pos=0.03,
               knee_pos=0.05,
               ankle_pos=0.08,
-              joint_vel=1.5, # 1.5
-              gravity=0.05, # 0.1
+              joint_vel=2.5, # 1.5
+              gravity=0.1, # 0.1
               linvel=0.1,
-              gyro=0.2,
-              accelerometer=0.2,
+              gyro=0.1,
+              accelerometer=0.05,
           ),
       ),
       reward_config=config_dict.create(
           scales=config_dict.create(
               # Tracking related reward
               tracking_lin_vel=1.0, # follow the joystick command x, y 1.0
-              tracking_ang_vel=0.5, # follow the joystick command theta 0.8
+              tracking_ang_vel=0.8, # follow the joystick command theta 0.8
               # Base related rewards.
               lin_vel_z=-2.0,
               ang_vel_xy=-0.05,
               orientation=-5.0, # body orientation from gravity 
               base_height=0.0,
               # Energy related rewards.
-              torques= -0.0002, # penalize high torques -0.0002
+              torques=-0.0002, # penalize high torques -0.0002
               action_rate=-0.01, # penalize rapid changes in action -0.001
-              energy=0.0001, # penalize ernergy consumption -0.0001
+              energy=-0.0001, # penalize ernergy consumption -0.0001
               # Feet related rewards.
-              feet_clearance=-1.0, # -> was -0.5
-              feet_air_time=2.0, # was 2.0
-              feet_slip=-0.25, # was -0.25
+              feet_clearance=0.0, # -> was -0.5
+              feet_air_time=0.0, # was 2.0
+              feet_slip=-0.5, # was -0.25
               feet_height=0.0,
               feet_phase=1.0, # was 1.0
               # Other rewards.
@@ -88,10 +88,10 @@ def default_config() -> config_dict.ConfigDict:
               termination=-1.0,
               # Pose related rewards.
               joint_deviation_ankle=0.0, # was -0.25
-              joint_deviation_knee=-0.1, # was -0.1
-              joint_deviation_hip=-0.25, # was -0.25
+              joint_deviation_knee=0.0, # was -0.1
+              joint_deviation_hip=0.0, # was -0.25
               dof_pos_limits=-1.0,
-              pose=-1.0, # TEST IT (was -1.0)
+              pose=-1.0, # TEST IT (was -1.0) # TODO : test with pose 
           ),
           tracking_sigma=0.25, # test it with 0.01
           max_foot_height=0.04,
@@ -452,7 +452,7 @@ class Joystick(bd5_base.BD5Env):
             [
                 noisy_gyro,  # 3 (gx, gy, gz)
                 noisy_accelerometer,  # 3 (ax, ay, az)
-                #noisy_gravity,  # 3 (ox, oy, oz)
+                noisy_gravity,  # 3 (ox, oy, oz)
                 info["command"],  # 3 (Vx, Vy, Vyaw)
                 noisy_joint_angles - self._default_pose,  # NUM_JOINTS
                 noisy_joint_vel * self._config.dof_vel_scale,  # NUM_JOINTS
@@ -700,16 +700,6 @@ class Joystick(bd5_base.BD5Env):
         mask = jp.logical_and(linvel_mask, jp.linalg.norm(commands) > 0.01)
         reward *= mask
         return jp.nan_to_num(reward)
-    
-    def _flat_feet(
-            self,
-            data,
-    ) -> jax.Array:
-        # reward feet flatness 
-        foot_pos = data.site_xpos[self._feet_site_id]
-        foot_z = foot_pos[..., -1]
-        
-        
 
     def sample_command(self, rng: jax.Array) -> jax.Array:
         rng1, rng2, rng3, rng4 = jax.random.split(rng, 4)

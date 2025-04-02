@@ -84,8 +84,8 @@ class OnnxController:
     # get accelerometer
     accelerometer = data.sensor("accelerometer").data
     # get gravity
-    #imu_xmat = data.site_xmat[model.site("imu").id].reshape(3, 3)
-    #gravity = imu_xmat.T @ np.array([0, 0, -1])
+    imu_xmat = data.site_xmat[model.site("imu").id].reshape(3, 3)
+    gravity = imu_xmat.T @ np.array([0, 0, -1])
     # get joint angles delta and velocities
     joint_angles = data.qpos[7:] - self._default_angles
     joint_velocities = data.qvel[6:]
@@ -98,7 +98,7 @@ class OnnxController:
     obs = np.hstack([
         gyro,
         accelerometer,
-        #gravity,
+        gravity,
         command,
         joint_angles,
         joint_velocities,

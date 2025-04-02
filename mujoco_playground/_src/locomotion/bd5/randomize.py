@@ -26,16 +26,16 @@ TORSO_BODY_ID = 1
 def domain_randomize(model: mjx.Model, rng: jax.Array):
     @jax.vmap
     def rand_dynamics(rng):
-        # Floor friction: =U(0.4, 1.0).
+        # Floor friction: =U(0.5, 1.0).
         rng, key = jax.random.split(rng)
         geom_friction = model.geom_friction.at[FLOOR_GEOM_ID, 0].set(
             jax.random.uniform(key, minval=0.5, maxval=1.0)
         )
 
-        # Joint frictionloss: *U(0.9, 1.2).
+        # Joint frictionloss: *U(0.9, 1.1).
         rng, key = jax.random.split(rng)
         frictionloss = model.dof_frictionloss[6:] * jax.random.uniform(
-            key, shape=(10,), minval=0.9, maxval=1.2
+            key, shape=(10,), minval=0.9, maxval=1.1
         )
         dof_frictionloss = model.dof_frictionloss.at[6:].set(frictionloss)
 
@@ -46,10 +46,10 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
         )
         dof_armature = model.dof_armature.at[6:].set(armature)
 
-        # Scale all link masses: *U(0.5, 1.1).
+        # Scale all link masses: *U(0.9, 1.1).
         rng, key = jax.random.split(rng)
         dmass = jax.random.uniform(
-            key, shape=(model.nbody,), minval=0.5, maxval=1.1
+            key, shape=(model.nbody,), minval=0.9, maxval=1.1
         )
         body_mass = model.body_mass.at[:].set(model.body_mass * dmass)
 
@@ -60,9 +60,9 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
             body_mass[TORSO_BODY_ID] + dmass
         )
 
-        # Jitter center of mass position: +U(-0.05, 0.05).
+        # Jitter center of mass position: +U(-0.07, 0.07).
         rng, key = jax.random.split(rng)
-        dpos = jax.random.uniform(key, (3,), minval=-0.05, maxval=0.05) 
+        dpos = jax.random.uniform(key, (3,), minval=-0.07, maxval=0.07) 
         body_ipos = model.body_ipos.at[TORSO_BODY_ID].set(
             model.body_ipos[TORSO_BODY_ID] + dpos
         )
