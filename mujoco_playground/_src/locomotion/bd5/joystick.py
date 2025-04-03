@@ -40,7 +40,7 @@ def default_config() -> config_dict.ConfigDict:
       sim_dt=0.002,
       episode_length=1000,
       action_repeat=1,
-      action_scale=0.5,
+      action_scale=0.3,
       dof_vel_scale=1.0, # 0.05
       history_len=1,
       soft_joint_pos_limit_factor=0.95,
@@ -66,26 +66,26 @@ def default_config() -> config_dict.ConfigDict:
           scales=config_dict.create(
               # Tracking related reward
               tracking_lin_vel=1.0, # follow the joystick command x, y 1.0
-              tracking_ang_vel=0.8, # follow the joystick command theta 0.8
+              tracking_ang_vel=0.5, # follow the joystick command theta 0.8
               # Base related rewards.
-              lin_vel_z=-2.0,
-              ang_vel_xy=-0.05,
-              orientation=-5.0, # body orientation from gravity 
+              lin_vel_z=0.0,
+              ang_vel_xy=-0.15,
+              orientation=-2.0, # body orientation from gravity 
               base_height=0.0,
               # Energy related rewards.
-              torques=-0.0002, # penalize high torques -0.0002
-              action_rate=-0.01, # penalize rapid changes in action -0.001
-              energy=-0.0001, # penalize ernergy consumption -0.0001
+              torques=0.0, # penalize high torques -0.0002
+              action_rate=0.0, # penalize rapid changes in action -0.001
+              energy=0.0, # penalize ernergy consumption -0.0001 / -2e-5
               # Feet related rewards.
-              feet_clearance=0.0, # -> was -0.5
-              feet_air_time=0.0, # was 2.0
-              feet_slip=-0.5, # was -0.25
+              feet_clearance=-0.1, # -> was -0.5
+              feet_air_time=2.0, # was 2.0
+              feet_slip=-0.25, # was -0.25
               feet_height=0.0,
               feet_phase=1.0, # was 1.0
               # Other rewards.
               stand_still=0.0, # penalize when command = 0
               alive=0.0,
-              termination=-1.0,
+              termination=-100.0,
               # Pose related rewards.
               joint_deviation_ankle=0.0, # was -0.25
               joint_deviation_knee=0.0, # was -0.1
@@ -94,7 +94,7 @@ def default_config() -> config_dict.ConfigDict:
               pose=-1.0, # TEST IT (was -1.0) # TODO : test with pose 
           ),
           tracking_sigma=0.25, # test it with 0.01
-          max_foot_height=0.04,
+          max_foot_height=0.05,
           base_height_target=0.224,
       ),
       push_config=config_dict.create(
@@ -102,9 +102,9 @@ def default_config() -> config_dict.ConfigDict:
           interval_range=[5.0, 10.0],
           magnitude_range=[0.1, 2.0],
       ),
-        lin_vel_x=[-1.0, 1.0],
-        lin_vel_y=[-1.0, 1.0],
-        ang_vel_yaw=[-1.0, 1.0],
+        lin_vel_x=[-0.7, 0.7],
+        lin_vel_y=[-0.7, 0.7],
+        ang_vel_yaw=[-0.8, 0.8],
   )
 
 class Joystick(bd5_base.BD5Env):
@@ -150,13 +150,13 @@ class Joystick(bd5_base.BD5Env):
             [
                 1.0, # left_hip_yaw 0
                 1.0, # left_hip_roll 1
-                0.01, # left_hip_pitch 2
-                0.01, # left_knee 3
+                1.0, # left_hip_pitch 2
+                1.0, # left_knee 3
                 1.0,  # left_ankle 4
                 1.0, # right_hip_yaw 5 
                 1.0, # right_hip_roll 6
-                0.01, # right_hip_pitch 7
-                0.01, # right_knee 8
+                1.0, # right_hip_pitch 7
+                1.0, # right_knee 8
                 1.0,  # right_ankle 9
             ]
         )
@@ -515,7 +515,7 @@ class Joystick(bd5_base.BD5Env):
             "base_height": self._cost_base_height(data.qpos[2]),
             # Energy related rewards.
             "torques": self._cost_torques(data.actuator_force),
-            "action_rate": self._cost_action_rate(action, info["last_act"], info["last_last_act"]),
+            "action_rate": self._cost_action_rate(action, info["last_act"]),
             "energy": self._cost_energy(data.qvel[6:], data.actuator_force),
             # Feet related rewards.
             "feet_clearance": self._cost_feet_clearance(data, info),
@@ -545,7 +545,6 @@ class Joystick(bd5_base.BD5Env):
         commands: jax.Array,
         local_vel: jax.Array,
     ) -> jax.Array:
-        """
         lin_vel_error = jp.sum(jp.square(commands[:2] - local_vel[:2]))
         reward = jp.exp(-lin_vel_error / self._config.reward_config.tracking_sigma)
         """
@@ -554,6 +553,7 @@ class Joystick(bd5_base.BD5Env):
         error_y = jp.clip(jp.abs(local_vel[1] - commands[1]) - y_tol, 0.0, None)
         lin_vel_error = error_x + jp.square(error_y)
         reward = jp.exp(-lin_vel_error / self._config.reward_config.tracking_sigma)
+        """
         return jp.nan_to_num(reward)
 
     def _reward_tracking_ang_vel(
@@ -586,12 +586,11 @@ class Joystick(bd5_base.BD5Env):
     def _cost_energy(self, qvel: jax.Array, qfrc_actuator: jax.Array) -> jax.Array:
         return jp.nan_to_num(jp.sum(jp.abs(qvel) * jp.abs(qfrc_actuator)))
 
-    # TODO : New action rate with second derivative 
-    def _cost_action_rate(self, act: jax.Array, last_act: jax.Array, last_last_act: jax.Array) -> jax.Array:
-        # Penalize first and second derivative of actions.
-        c1 = jp.sum(jp.square(act - last_act))
-        c2 = jp.sum(jp.square(act - 2 * last_act + last_last_act))
-        return jp.nan_to_num(c1 + c2)
+    def _cost_action_rate(self, act: jax.Array, last_act: jax.Array) -> jax.Array:
+        # Penalize first derivative of actions.
+        #c1 = jp.sum(jp.square(act - last))
+        c1 = jp.sum(jp.square(last_act - act))
+        return jp.nan_to_num(c1)
 
     # Other rewards.
     def _cost_joint_pos_limits(self, qpos: jax.Array) -> jax.Array:
@@ -602,16 +601,9 @@ class Joystick(bd5_base.BD5Env):
     def _cost_stand_still(
         self, commands: jax.Array, qpos: jax.Array, qvel: jax.Array
     ) -> jax.Array:
-        cmd_norm = jp.linalg.norm(commands[:3])
-        pose_cost = jp.sum(jp.abs(qpos - self._default_pose))
-        pose_vel = jp.sum(jp.abs(qvel))
-        cost = pose_cost + pose_vel
-        cost *= cmd_norm < 0.01
-        """
         del qvel # unused
         cmd_norm = jp.linalg.norm(commands)
-        cost = jp.sum(jp.abs(qpos - self._default_pose)) * (cmd_norm < 0.1)
-        """
+        cost = jp.sum(jp.abs(qpos - self._default_pose)) * (cmd_norm < 0.01)
         return jp.nan_to_num(cost)
 
     def _cost_termination(self, done: jax.Array) -> jax.Array:
@@ -636,7 +628,6 @@ class Joystick(bd5_base.BD5Env):
         return jp.nan_to_num(jp.sum(jp.square(qpos - self._default_pose) * self._weights))
 
     # Feet related rewards.
-    # TODO : other formulation of the feet slip reward
     def _cost_feet_slip(self, data: mjx.Data, contact: jax.Array, info: dict[str, Any]) -> jax.Array:
         del info  # Unused.
         body_vel = self.get_global_linvel(data)[:2]
@@ -650,7 +641,7 @@ class Joystick(bd5_base.BD5Env):
         vel_norm = jp.sqrt(jp.linalg.norm(vel_xy, axis=-1))
         foot_pos = data.site_xpos[self._feet_site_id]
         foot_z = foot_pos[..., -1]
-        delta = jp.abs(foot_z - self._config.reward_config.max_foot_height) ** 2 
+        delta = jp.abs(foot_z - self._config.reward_config.max_foot_height)
         return jp.nan_to_num(jp.sum(delta * vel_norm))
 
     def _cost_feet_height(
@@ -671,11 +662,10 @@ class Joystick(bd5_base.BD5Env):
         threshold_min: float = 0.2,
         threshold_max: float = 0.5,
     ) -> jax.Array:
-        cmd_norm = jp.linalg.norm(commands)
+        del commands
         air_time = (air_time - threshold_min) * first_contact
         air_time = jp.clip(air_time, max=threshold_max - threshold_min)
         reward = jp.sum(air_time)
-        reward *= cmd_norm > 0.1  # No reward for zero commands.
         return jp.nan_to_num(reward)
 
     def _reward_feet_phase(

@@ -60,9 +60,9 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
             body_mass[TORSO_BODY_ID] + dmass
         )
 
-        # Jitter center of mass position: +U(-0.07, 0.07).
+        # Jitter center of mass position: +U(-0.05, 0.05).
         rng, key = jax.random.split(rng)
-        dpos = jax.random.uniform(key, (3,), minval=-0.07, maxval=0.07) 
+        dpos = jax.random.uniform(key, (3,), minval=-0.05, maxval=0.05) 
         body_ipos = model.body_ipos.at[TORSO_BODY_ID].set(
             model.body_ipos[TORSO_BODY_ID] + dpos
         )
