@@ -42,7 +42,7 @@ print(obs_size, act_size)
 
 ppo_network = network_factory(obs_size, act_size)
 
-ckpt_path = "/home/master/mujoco_playground/learning/logs/BD5JoystickFlatTerrain-20250330-174059/checkpoints"
+ckpt_path = "/home/master/mujoco_playground/learning/logs/BD5JoystickFlatTerrain-20250408-195225_SHOULDBEGOOD/checkpoints"
 ckpt_path = ckpt_path + "/params.pkl"
 
 with open(ckpt_path, 'rb') as f:

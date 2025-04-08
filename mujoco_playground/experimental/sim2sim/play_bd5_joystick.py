@@ -91,6 +91,7 @@ class OnnxController:
     joint_velocities = data.qvel[6:]
     # get command
     command = self._joystick.get_command()
+    print(f"command: {command}")
     # adjust phase
     ph = self._phase if np.linalg.norm(command) >= 0.01 else np.ones(2) * np.pi
     phase = np.concatenate([np.cos(ph), np.sin(ph)])
@@ -157,8 +158,8 @@ def load_callback(model=None, data=None):
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
       action_scale=0.3,
-      vel_range_x=[-1.0, 1.0],
-      vel_range_y=[-1.0, 1.0],
+      vel_range_x=[-0.6, 0.6],
+      vel_range_y=[-0.6, 0.6],
       vel_range_rot=[-1.0, 1.0],
       gait_freq=1.0,
       max_motor_speed=4.82,
