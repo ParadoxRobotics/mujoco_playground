@@ -20,6 +20,8 @@ import mujoco.viewer as viewer
 import numpy as np
 import onnxruntime as rt
 
+from scipy.spatial.transform import Rotation as R
+
 from mujoco_playground._src.locomotion.bd5 import bd5_constants
 from mujoco_playground._src.locomotion.bd5.base import get_assets
 from mujoco_playground.experimental.sim2sim.gamepad_reader_bd5 import Gamepad
@@ -40,7 +42,7 @@ class OnnxController:
       vel_range_x: float = [-1.0, 1.0],
       vel_range_y: float = [-1.0, 1.0],
       vel_range_rot: float = [-1.0, 1.0],
-      gait_freq:float = 1.25,
+      gait_freq:float = 1.0,
       max_motor_speed: float = 4.82,
   ):
     self._output_names = ["continuous_actions"]
@@ -83,15 +85,16 @@ class OnnxController:
     gyro = data.sensor("gyro").data
     # get accelerometer
     accelerometer = data.sensor("accelerometer").data
+    """
     # get gravity
     imu_xmat = data.site_xmat[model.site("imu").id].reshape(3, 3)
     gravity = imu_xmat.T @ np.array([0, 0, -1])
+    """
     # get joint angles delta and velocities
     joint_angles = data.qpos[7:] - self._default_angles
     joint_velocities = data.qvel[6:]
     # get command
     command = self._joystick.get_command()
-    print(f"command: {command}")
     # adjust phase
     ph = self._phase if np.linalg.norm(command) >= 0.01 else np.ones(2) * np.pi
     phase = np.concatenate([np.cos(ph), np.sin(ph)])
@@ -99,7 +102,6 @@ class OnnxController:
     obs = np.hstack([
         gyro,
         accelerometer,
-        gravity,
         command,
         joint_angles,
         joint_velocities,
@@ -153,7 +155,7 @@ def load_callback(model=None, data=None):
   model.opt.timestep = sim_dt
 
   policy = OnnxController(
-      policy_path=(_ONNX_DIR / "bd5_test_policy.onnx").as_posix(),
+      policy_path=(_ONNX_DIR / "bd5_PERFECT_WOGRAVITY_policy.onnx").as_posix(),
       default_angles=np.array(model.keyframe("init_pose").qpos[7:]),
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
@@ -162,7 +164,7 @@ def load_callback(model=None, data=None):
       vel_range_y=[-0.6, 0.6],
       vel_range_rot=[-1.0, 1.0],
       gait_freq=1.0,
-      max_motor_speed=4.82,
+      max_motor_speed=3.90,
   )
 
   mujoco.set_mjcb_control(policy.get_control)

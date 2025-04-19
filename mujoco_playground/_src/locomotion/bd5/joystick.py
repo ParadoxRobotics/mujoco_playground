@@ -44,7 +44,7 @@ def default_config() -> config_dict.ConfigDict:
       dof_vel_scale=1.0, # 0.05
       history_len=1,
       soft_joint_pos_limit_factor=0.95,
-      max_motor_velocity=4.82,
+      max_motor_velocity=3.90, # 4.82 max without load
       noise_config=config_dict.create(
           level=1.0,  # Set to 0.0 to disable noise.
           action_min_delay=0,  # env steps
@@ -452,7 +452,6 @@ class Joystick(bd5_base.BD5Env):
             [
                 noisy_gyro,  # 3 (gx, gy, gz)
                 noisy_accelerometer,  # 3 (ax, ay, az)
-                noisy_gravity,  # 3 (ox, oy, oz)
                 info["command"],  # 3 (Vx, Vy, Vyaw)
                 noisy_joint_angles - self._default_pose,  # NUM_JOINTS
                 noisy_joint_vel * self._config.dof_vel_scale,  # NUM_JOINTS
