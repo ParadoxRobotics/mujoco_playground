@@ -85,11 +85,6 @@ class OnnxController:
     gyro = data.sensor("gyro").data
     # get accelerometer
     accelerometer = data.sensor("accelerometer").data
-    """
-    # get gravity
-    imu_xmat = data.site_xmat[model.site("imu").id].reshape(3, 3)
-    gravity = imu_xmat.T @ np.array([0, 0, -1])
-    """
     # get joint angles delta and velocities
     joint_angles = data.qpos[7:] - self._default_angles
     joint_velocities = data.qvel[6:]
@@ -155,7 +150,7 @@ def load_callback(model=None, data=None):
   model.opt.timestep = sim_dt
 
   policy = OnnxController(
-      policy_path=(_ONNX_DIR / "bd5_PERFECT_WOGRAVITY_policy.onnx").as_posix(),
+      policy_path=(_ONNX_DIR / "BD5_REAL.onnx").as_posix(),
       default_angles=np.array(model.keyframe("init_pose").qpos[7:]),
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
@@ -164,7 +159,7 @@ def load_callback(model=None, data=None):
       vel_range_y=[-0.6, 0.6],
       vel_range_rot=[-1.0, 1.0],
       gait_freq=1.0,
-      max_motor_speed=3.90,
+      max_motor_speed=4.82,
   )
 
   mujoco.set_mjcb_control(policy.get_control)
@@ -173,3 +168,6 @@ def load_callback(model=None, data=None):
 
 if __name__ == "__main__":
   viewer.launch(loader=load_callback)
+
+
+# TODO : RE-ADD THE GRAVITY AT SOME POINTS

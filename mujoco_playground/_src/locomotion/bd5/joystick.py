@@ -34,6 +34,9 @@ from mujoco_playground._src.locomotion.bd5 import bd5_constants as consts
 
 CLIP_MOTOR_SPEED = True
 
+# TODO : add a gravity measurement at some point if the 
+# test on the real BD-5 is conclusive 
+
 def default_config() -> config_dict.ConfigDict:
   return config_dict.create(
       ctrl_dt=0.02,
@@ -44,7 +47,7 @@ def default_config() -> config_dict.ConfigDict:
       dof_vel_scale=1.0, # 0.05
       history_len=1,
       soft_joint_pos_limit_factor=0.95,
-      max_motor_velocity=3.90, # 4.82 max without load
+      max_motor_velocity=4.82, # 4.82 max without load
       noise_config=config_dict.create(
           level=1.0,  # Set to 0.0 to disable noise.
           action_min_delay=0,  # env steps
