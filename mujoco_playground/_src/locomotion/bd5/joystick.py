@@ -455,6 +455,7 @@ class Joystick(bd5_base.BD5Env):
             [
                 noisy_gyro,  # 3 (gx, gy, gz)
                 noisy_accelerometer,  # 3 (ax, ay, az)
+                noisy_gravity,  # 3 (gx, gy, gz)
                 info["command"],  # 3 (Vx, Vy, Vyaw)
                 noisy_joint_angles - self._default_pose,  # NUM_JOINTS
                 noisy_joint_vel * self._config.dof_vel_scale,  # NUM_JOINTS

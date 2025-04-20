@@ -42,14 +42,14 @@ print(obs_size, act_size)
 
 ppo_network = network_factory(obs_size, act_size)
 
-ckpt_path = "/home/master/mujoco_playground/learning/logs/BD5JoystickFlatTerrain-20250420-101217_PERFECT_WO_NOLOADSPEED/checkpoints"
+ckpt_path = "/home/master/mujoco_playground/learning/logs/BD5JoystickFlatTerrain-20250420-163556_PERFECT_ONLYGRAVITY/checkpoints"
 ckpt_path = ckpt_path + "/params.pkl"
 
 with open(ckpt_path, 'rb') as f:
     params = pickle.load(f)
 print(params.keys())
 
-output_path = f"/home/master/mujoco_playground/mujoco_playground/experimental/sim2sim/onnx/BD5_REAL.onnx"
+output_path = f"/home/master/mujoco_playground/mujoco_playground/experimental/sim2sim/onnx/BD5_REAL_GRAVITYONLY.onnx"
 
 params = (params["normalizer_params"], params["policy_params"])
 make_inference_fn = ppo_networks.make_inference_fn(ppo_network)
