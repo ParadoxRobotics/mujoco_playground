@@ -1,5 +1,5 @@
 <mujoco model="bd5 feetonly flat terrain scene">
-  <include file="BD-5_V3.xml"/>
+  <include file="BD-5_V4_corrected.xml"/>
 
   <statistic center="0 0 0.1" extent="0.8" meansize="0.04"/>
 
@@ -21,7 +21,7 @@
 
   <worldbody>
     <body name="floor">
-      <geom name="floor" size="0 0 0.01" type="plane" material="groundplane" contype="1" conaffinity="0" priority="1"
+      <geom name="floor" size="0 0 0.01" type="plane" material="groundplane" contype="1" conaffinity="0" priority="10"
         friction="0.6" condim="3"/>
     </body>
   </worldbody>
