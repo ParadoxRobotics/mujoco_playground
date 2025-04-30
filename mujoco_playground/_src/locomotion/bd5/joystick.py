@@ -44,7 +44,7 @@ def default_config() -> config_dict.ConfigDict:
       dof_vel_scale=1.0, # 0.05
       history_len=1,
       soft_joint_pos_limit_factor=0.95,
-      max_motor_velocity=4.0, # clip motor velocity at 4.82 nominal
+      max_motor_velocity=3.50, # clip motor velocity at 4.82 nominal
       noise_config=config_dict.create(
           level=1.0,  # Set to 0.0 to disable noise.
           action_min_delay=0,  # env steps

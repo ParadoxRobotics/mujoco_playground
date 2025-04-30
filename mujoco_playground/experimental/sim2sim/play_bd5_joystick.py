@@ -163,7 +163,7 @@ def load_callback(model=None, data=None):
       vel_range_y=[-0.2, 0.2],
       vel_range_rot=[-1.0, 1.0],
       gait_freq=0.8,
-      max_motor_speed=4.0,
+      max_motor_speed=3.50,
   )
 
   mujoco.set_mjcb_control(policy.get_control)
