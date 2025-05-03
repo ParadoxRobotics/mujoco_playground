@@ -88,9 +88,9 @@ _USE_TB = flags.DEFINE_boolean(
     "use_tb", False, "Use TensorBoard for logging (ignored in play-only mode)"
 )
 _DOMAIN_RANDOMIZATION = flags.DEFINE_boolean(
-    "domain_randomization", False, "Use domain randomization"
+    "domain_randomization", True, "Use domain randomization" # go back to false if needed 
 )
-_SEED = flags.DEFINE_integer("seed", 1, "Random seed")
+_SEED = flags.DEFINE_integer("seed", 1, "Random seed") 
 _NUM_TIMESTEPS = flags.DEFINE_integer(
     "num_timesteps", 1_000_000, "Number of timesteps"
 )
@@ -381,6 +381,7 @@ def main(argv):
   print("Model saved as pkl.")
 
   # Prepare for evaluation
+  eval_env = (None if _VISION.value else registry.load(_ENV_NAME.value, config=env_cfg)) # adding fix #41
   num_envs = 1
   if _VISION.value:
     eval_env = env
@@ -389,7 +390,7 @@ def main(argv):
   jit_reset = jax.jit(eval_env.reset)
   jit_step = jax.jit(eval_env.step)
 
-  rng = jax.random.PRNGKey(123)
+  rng = jax.random.PRNGKey(1)
   rng, reset_rng = jax.random.split(rng)
   if _VISION.value:
     reset_rng = jp.asarray(jax.random.split(reset_rng, num_envs))

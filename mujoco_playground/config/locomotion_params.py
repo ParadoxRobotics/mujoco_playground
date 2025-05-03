@@ -122,8 +122,8 @@ def brax_ppo_config(env_name: str) -> config_dict.ConfigDict:
       "BD5JoystickFlatTerrain",
       "BD5JoystickRoughTerrain",
   ):
-    rl_config.num_timesteps = 160_000_000
-    rl_config.num_evals = 16
+    rl_config.num_timesteps = 300_000_000
+    rl_config.num_evals = 30
     rl_config.clipping_epsilon = 0.2
     rl_config.num_resets_per_eval = 1
     rl_config.entropy_cost = 0.005

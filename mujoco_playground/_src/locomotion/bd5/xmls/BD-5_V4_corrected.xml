@@ -37,7 +37,7 @@
       <geom type="mesh" rgba="0.9098 0.44314 0.031373 1" mesh="BODY" class="visualgeom" />
       <inertial pos="-0.00035 0.00081 0.03798" quat="0.70710678 0. 0. 0.70710678" mass="0.92059" diaginertia="0.00577547 0.00468576 0.00266097"/>
       <body name="HIP_LEFT" pos="0 0.01425 -0.0436">
-        <inertial pos="0.00185 0.05284 0.02786" quat="1 0 0 0" mass="0.101" diaginertia="4.55664e-05 4.08892e-05 2.89285e-05" />
+        <inertial pos="0.00185 0.05284 0.02786" quat="1 0 0 0" mass="0.101" diaginertia="4.61603e-05 4.12116e-05 2.96353e-05" />
         <joint name="left_hip_yaw" pos="0 0 0" axis="0 0 1" range="-0.37899 0.37899" actuatorfrcrange="-4.1 4.1" damping="1.084" armature="0.045" frictionloss="0.03" />
         <geom type="mesh" rgba="0.25098 0.25098 0.25098 1" mesh="HIP_LEFT" class="visualgeom" />
         <body name="HIP_ROLL_LEFT" pos="0 0.05925 0.01275">
@@ -74,7 +74,7 @@
         <joint name="right_hip_yaw" pos="0 0 0" axis="0 0 1" range="-0.37899 0.37899" actuatorfrcrange="-4.1 4.1" damping="1.084" armature="0.045" frictionloss="0.03" />
         <geom type="mesh" rgba="0.25098 0.25098 0.25098 1" mesh="HIP_RIGHT" class="visualgeom" />
         <body name="HIP_ROLL_RIGHT" pos="0 -0.05925 0.01275">
-          <inertial pos="0 0 -0.02515" quat="-2.15792e-05 0.707107 2.15792e-05 0.707107" mass="0.018" diaginertia="7.87081e-06 6.25751e-06 5.92983e-06" />
+          <inertial pos="0 0 -0.02515" quat="0.500015 0.499985 -0.500015 0.499985" mass="0.018" diaginertia="7.87081e-06 6.25751e-06 5.92983e-06" />
           <joint name="right_hip_roll" pos="0 0 0" axis="1 0 0" range="-1.8827 0.38819" actuatorfrcrange="-4.1 4.1" damping="1.084" armature="0.045" frictionloss="0.03" />
           <geom type="mesh" rgba="0.25098 0.25098 0.25098 1" mesh="HIP_ROLL_RIGHT" class="visualgeom" />
           <body name="THIGH_RIGHT" pos="0 0 -0.05">

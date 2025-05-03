@@ -44,7 +44,7 @@ def default_config() -> config_dict.ConfigDict:
       dof_vel_scale=1.0, # 0.05
       history_len=1,
       soft_joint_pos_limit_factor=0.95,
-      max_motor_velocity=3.50, # clip motor velocity at 4.82 nominal
+      max_motor_velocity=4.82, # clip motor velocity at 4.82 nominal
       noise_config=config_dict.create(
           level=1.0,  # Set to 0.0 to disable noise.
           action_min_delay=0,  # env steps
@@ -68,23 +68,25 @@ def default_config() -> config_dict.ConfigDict:
               tracking_lin_vel=2.0, # follow the joystick command x, y 1.0
               tracking_ang_vel=1.0, # follow the joystick command theta 0.5 or 0.8
               # Base related rewards.
-              lin_vel_z=-1.0,
-              ang_vel_xy=-0.5,
+              lin_vel_z=-2.0,
+              ang_vel_xy=-0.05,
               orientation=-5.0, # body orientation from gravity 
               base_height=0.0,
               # Energy related rewards.
-              torques=-1e-3, # penalize high torques -0.0002
-              action_rate=-0.05, # penalize rapid changes in action -0.001
-              energy=-2e-5, # penalize ernergy consumption -0.0001 / -2e-5
+              torques=-0.0002, # penalize high torques -0.0002
+              action_rate=-0.005, # penalize rapid changes in action -0.001
+              energy=-0.00005, # penalize ernergy consumption -0.0001 / -2e-5
               # Feet related rewards.
-              feet_clearance=-0.8, # -> was -0.5
-              feet_air_time=3.5, # was 2.0 
-              feet_slip=-0.25, # was -0.25
-              feet_drag=-1.5, 
+              feet_clearance=-0.4, # -> was -0.5
+              feet_air_time=2.5, # was 2.0 
+              feet_slip=0.0, # was -0.25 similar to feet_drag 
+              feet_drag=-1.5, # was -1.5 
               feet_height=0.0,
-              feet_phase=5.0, # was 1.0
+              feet_phase=0.0, # was 1.0
+              foot_lift_reward=1.0, # reward when z_vel > 0 during swing 
+              swing_symmetry=1.0, # encourage symmetric gait 
               # Other rewards.
-              stand_still=-0.2, # penalize when command = 0
+              stand_still=-0.5, # penalize when command = 0
               alive=0.0,
               termination=-2.0,
               # Pose related rewards.
@@ -103,8 +105,8 @@ def default_config() -> config_dict.ConfigDict:
           interval_range=[5.0, 10.0],
           magnitude_range=[0.1, 2.0],
       ),
-        lin_vel_x=[-0.4, 0.4],
-        lin_vel_y=[-0.2, 0.2],
+        lin_vel_x=[-1.0, 1.0],
+        lin_vel_y=[-1.0, 1.0],
         ang_vel_yaw=[-1.0, 1.0],
   )
 
@@ -152,13 +154,13 @@ class Joystick(bd5_base.BD5Env):
                 1.0, # left_hip_yaw 0
                 1.0, # left_hip_roll 1
                 1.0, # left_hip_pitch 2
-                1.0, # left_knee 3
-                1.0,  # left_ankle 4
+                0.01, # left_knee 3
+                0.01, # left_ankle 4
                 1.0, # right_hip_yaw 5 
                 1.0, # right_hip_roll 6
                 1.0, # right_hip_pitch 7
-                1.0, # right_knee 8
-                1.0,  # right_ankle 9
+                0.01, # right_knee 8
+                0.01, # right_ankle 9
             ]
         )
         # fmt: on
@@ -448,12 +450,11 @@ class Joystick(bd5_base.BD5Env):
         sin = jp.sin(info["phase"])
         phase = jp.concatenate([cos, sin])
 
-        # Real robot state observation n=66
+        # Real robot state observation n=63
         state = jp.hstack(
             [
                 noisy_gyro,  # 3 (gx, gy, gz)
                 noisy_accelerometer,  # 3 (ax, ay, az)
-                noisy_gravity,  # 3 (gx, gy, gz)
                 info["command"],  # 3 (Vx, Vy, Vyaw)
                 noisy_joint_angles - self._default_pose,  # NUM_JOINTS
                 noisy_joint_vel * self._config.dof_vel_scale,  # NUM_JOINTS
@@ -530,6 +531,8 @@ class Joystick(bd5_base.BD5Env):
                 self._config.reward_config.max_foot_height,
                 info["command"],
             ),
+            "swing_symmetry": self._reward_swing_symmetry(data, contact, info["command"]),
+            "foot_lift_reward": self._reward_foot_lift_velocity(data, contact, info["command"]),
             # Other rewards.
             "alive": self._reward_alive(),
             "termination": self._cost_termination(done),
@@ -541,6 +544,7 @@ class Joystick(bd5_base.BD5Env):
             "dof_pos_limits": self._cost_joint_pos_limits(data.qpos[7:]),
             "pose": self._cost_pose(data.qpos[7:]),
         }
+
 
     def _reward_tracking_lin_vel(
         self,
@@ -598,10 +602,10 @@ class Joystick(bd5_base.BD5Env):
     def _cost_stand_still(
         self, commands: jax.Array, qpos: jax.Array, qvel: jax.Array 
     ) -> jax.Array:
-        cmd_norm = jp.linalg.norm(commands)
+        cmd_norm = 1.0 - jp.clip(jp.linalg.norm(commands) / 0.01, 0.0, 1.0)
         cost_pos = jp.sum(jp.abs(qpos - self._default_pose))
         cost_vel = jp.sum(jp.abs(qvel))
-        cost = (cost_pos + cost_vel) * (cmd_norm < 0.01)
+        cost = (cost_pos + cost_vel) * cmd_norm
         return jp.nan_to_num(cost)
 
     def _cost_termination(self, done: jax.Array) -> jax.Array:
@@ -673,6 +677,34 @@ class Joystick(bd5_base.BD5Env):
         air_time = jp.clip(air_time, max=threshold_max - threshold_min)
         reward = jp.sum(air_time)
         return jp.nan_to_num(reward)
+
+    def _reward_foot_lift_velocity(
+            self, 
+            data: mjx.Data,
+            contact: jax.Array, 
+            commands: jax.Array
+        ) -> jax.Array:
+        # Encourage upward velocity when foot is not in contact
+        cmd_norm = jp.linalg.norm(commands)
+        foot_vels = data.sensordata[self._foot_linvel_sensor_adr].reshape(2, 3)
+        upward_vel = jp.clip(foot_vels[:, 2], 0.0, 1.0)  # only reward upward Z
+        not_in_contact = 1.0 - contact
+        mask = jp.clip(cmd_norm / 0.01, 0.0, 1.0)
+        return jp.nan_to_num(jp.sum(upward_vel * not_in_contact) * mask)
+
+    def _reward_swing_symmetry(
+            self, 
+            data: mjx.Data, 
+            contact: jax.Array,
+            commands: jax.Array
+        ) -> jax.Array:
+        # Encourage mirroring swing (velocities) when both feet are off ground
+        cmd_norm = jp.linalg.norm(commands)
+        foot_vels = data.sensordata[self._foot_linvel_sensor_adr].reshape(2, 3)
+        swing_phase = (1.0 - contact) > 0.5
+        diff = foot_vels[0] + foot_vels[1]  # they should be opposites
+        mask = jp.clip(cmd_norm / 0.01, 0.0, 1.0)
+        return jp.nan_to_num(jp.where(jp.logical_and(swing_phase[0], swing_phase[1]), -jp.sum(jp.square(diff)), 0.0) * mask)
 
     def _reward_feet_phase(
         self,

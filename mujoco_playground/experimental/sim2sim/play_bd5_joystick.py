@@ -85,9 +85,6 @@ class OnnxController:
     gyro = data.sensor("gyro").data
     # get accelerometer
     accelerometer = data.sensor("accelerometer").data
-    # get gravity
-    imu_xmat = data.site_xmat[model.site("imu").id].reshape(3, 3)
-    gravity = imu_xmat.T @ np.array([0, 0, -1])
     # get joint angles delta and velocities
     joint_angles = data.qpos[7:] - self._default_angles
     joint_velocities = data.qvel[6:]
@@ -100,7 +97,6 @@ class OnnxController:
     obs = np.hstack([
         gyro,
         accelerometer,
-        gravity,
         command,
         joint_angles,
         joint_velocities,
@@ -159,11 +155,11 @@ def load_callback(model=None, data=None):
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
       action_scale=0.3,
-      vel_range_x=[-0.4, 0.4],
-      vel_range_y=[-0.2, 0.2],
+      vel_range_x=[-1.0, 1.0],
+      vel_range_y=[-1.0, 1.0],
       vel_range_rot=[-1.0, 1.0],
-      gait_freq=0.8,
-      max_motor_speed=3.50,
+      gait_freq=0.6,
+      max_motor_speed=4.82,
   )
 
   mujoco.set_mjcb_control(policy.get_control)
