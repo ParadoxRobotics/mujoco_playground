@@ -155,11 +155,11 @@ def load_callback(model=None, data=None):
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
       action_scale=0.3,
-      vel_range_x = [-1.0, 1.0],
-      vel_range_y = [-1.0, 1.0],
+      vel_range_x = [-0.6, 0.6],
+      vel_range_y = [-0.4, 0.4],
       vel_range_rot = [-1.0, 1.0],
       gait_freq=1.0,
-      max_motor_speed=4.0,
+      max_motor_speed=4.82,
   )
 
   mujoco.set_mjcb_control(policy.get_control)

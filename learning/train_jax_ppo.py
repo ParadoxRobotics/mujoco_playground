@@ -88,7 +88,7 @@ _USE_TB = flags.DEFINE_boolean(
     "use_tb", False, "Use TensorBoard for logging (ignored in play-only mode)"
 )
 _DOMAIN_RANDOMIZATION = flags.DEFINE_boolean(
-    "domain_randomization", True, "Use domain randomization" # go back to false if needed 
+    "domain_randomization", False, "Use domain randomization"
 )
 _SEED = flags.DEFINE_integer("seed", 1, "Random seed") 
 _NUM_TIMESTEPS = flags.DEFINE_integer(

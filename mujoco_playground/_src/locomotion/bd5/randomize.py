@@ -53,9 +53,9 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
         )
         body_mass = model.body_mass.at[:].set(model.body_mass * dmass)
 
-        # Add mass to torso: +U(-0.5, 0.5).
+        # Add mass to torso: +U(-0.3, 0.3).
         rng, key = jax.random.split(rng)
-        dmass = jax.random.uniform(key, minval=-0.5, maxval=0.5)
+        dmass = jax.random.uniform(key, minval=-0.3, maxval=0.3)
         body_mass = body_mass.at[TORSO_BODY_ID].set(
             body_mass[TORSO_BODY_ID] + dmass
         )
@@ -77,7 +77,7 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
         # Joint stiffness: *U(0.8, 1.2).
         rng, key = jax.random.split(rng)
         kp = model.actuator_gainprm[:, 0] * jax.random.uniform(
-            key, (10,), minval=0.8, maxval=1.2
+            key, (10,), minval=0.9, maxval=1.1
         )
         actuator_gainprm = model.actuator_gainprm.at[:, 0].set(kp)
         actuator_biasprm = model.actuator_biasprm.at[:, 1].set(-kp)

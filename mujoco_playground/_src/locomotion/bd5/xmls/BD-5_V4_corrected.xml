@@ -9,7 +9,10 @@
     <joint limited="true" damping="1.084" armature="0.045" frictionloss="0.03" />
     <position inheritrange="1.0" kp="21.1" kv="0" forcerange="-4.1 4.1"/>
     <default class="visualgeom">
-      <geom material="visualgeom" condim="1" density="0" contype="0" conaffinity="0" group="2"/>
+      <geom material="visualgeom" contype="0" conaffinity="0" group="2"/>
+    </default>
+    <default class="collision">
+      <geom group="3"/>
     </default>
   </default>
 
@@ -55,15 +58,9 @@
               <body name="FOOT_LEFT" pos="0 0 -0.07064">
                 <inertial pos="0 0 -0.03334" quat="0 0.707107 0 0.707107" mass="0.032" diaginertia="3.17443e-05 3.16424e-05 6.9037e-06" />
                 <joint name="left_ankle" pos="0 0 0" axis="0 1 0" range="-1.8873 1.8873" actuatorfrcrange="-4.1 4.1" damping="1.084" armature="0.045" frictionloss="0.03" />
-                <geom name="collision_foot_left" type="cylinder"
-                size="0.013 0.065" 
-                pos="0 0 -0.0355"
-                contype="1" conaffinity="1" priority="10"
-                solref="0.005 1" solimp="0.9 0.95 0.001"
-                friction="1.0 0.005 0.0001"
-                axisangle="0 1 0 -1.5708" />
+                <geom name="collision_foot_left" type="cylinder" size="0.013 0.065" pos="0 0 -0.0355" axisangle="0 1 0 -1.5708" class="collision"/>
                 <geom type="mesh" rgba="0.9098 0.44314 0.031373 1" mesh="FOOT_LEFT" class="visualgeom" />
-                <site name="left_foot_site" pos="0 0 -0.048"/>
+                <site group="0" name="left_foot_site" pos="0 0 -0.048"/>
               </body>
             </body>
           </body>
@@ -88,15 +85,9 @@
               <body name="FOOT_RIGHT" pos="0 0 -0.07064">
                 <inertial pos="0 0 -0.03334" quat="0 0.707107 0 0.707107" mass="0.032" diaginertia="3.17443e-05 3.16424e-05 6.9037e-06" />
                 <joint name="right_ankle" pos="0 0 0" axis="0 1 0" range="-1.8873 1.8873" actuatorfrcrange="-4.1 4.1" damping="1.084" armature="0.045" frictionloss="0.03" />
-                <geom name="collision_foot_right" type="cylinder"
-                size="0.013 0.065" 
-                pos="0 0 -0.0355"
-                contype="1" conaffinity="1" priority="10"
-                solref="0.005 1" solimp="0.9 0.95 0.001"
-                friction="1.0 0.005 0.0001"
-                axisangle="0 1 0 -1.5708" />
+                <geom name="collision_foot_right" type="cylinder" size="0.013 0.065" pos="0 0 -0.0355" axisangle="0 1 0 -1.5708" class="collision"/>
                 <geom type="mesh" rgba="0.9098 0.44314 0.031373 1" mesh="FOOT_RIGHT" class="visualgeom" />
-                <site name="right_foot_site" pos="0 0 -0.048"/>
+                <site group="0" name="right_foot_site" pos="0 0 -0.048"/>
               </body>
             </body>
           </body>
