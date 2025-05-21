@@ -1,0 +1,83 @@
+{
+    "action_repeat": 1,
+    "action_scale": 0.3,
+    "ang_vel_yaw": [
+        -1.0,
+        1.0
+    ],
+    "ctrl_dt": 0.02,
+    "dof_vel_scale": 1.0,
+    "episode_length": 1000,
+    "history_len": 1,
+    "lin_vel_x": [
+        -0.6,
+        0.6
+    ],
+    "lin_vel_y": [
+        -0.4,
+        0.4
+    ],
+    "max_motor_velocity": 4.5,
+    "noise_config": {
+        "action_max_delay": 3,
+        "action_min_delay": 0,
+        "level": 1.0,
+        "obs_max_delay": 1,
+        "obs_min_delay": 0,
+        "scales": {
+            "accelerometer": 0.1,
+            "ankle_pos": 0.08,
+            "gravity": 0.1,
+            "gyro": 0.1,
+            "hip_pos": 0.03,
+            "joint_vel": 2.5,
+            "knee_pos": 0.05,
+            "linvel": 0.1
+        }
+    },
+    "push_config": {
+        "enable": true,
+        "interval_range": [
+            5.0,
+            10.0
+        ],
+        "magnitude_range": [
+            0.1,
+            2.0
+        ]
+    },
+    "reward_config": {
+        "base_height_target": 0.224,
+        "max_foot_height": 0.04,
+        "scales": {
+            "action_rate": -0.01,
+            "alive": 0.0,
+            "ang_vel_xy": -0.15,
+            "base_height": 0.0,
+            "dof_pos_limits": -1.0,
+            "energy": 0.0,
+            "feet_air_time": 1.0,
+            "feet_clearance": -0.5,
+            "feet_drag": 0.0,
+            "feet_height": 0.0,
+            "feet_phase": 0.0,
+            "feet_slip": -0.15,
+            "foot_lift_reward": 1.0,
+            "joint_deviation_ankle": 0.0,
+            "joint_deviation_hip": 0.0,
+            "joint_deviation_knee": 0.0,
+            "lin_vel_z": 0.0,
+            "orientation": -5.0,
+            "pose": -1.0,
+            "stand_still": -0.5,
+            "swing_symmetry": 1.0,
+            "termination": -1.0,
+            "torques": -0.0002,
+            "tracking_ang_vel": 1.0,
+            "tracking_lin_vel": 3.0
+        },
+        "tracking_sigma": 0.25
+    },
+    "sim_dt": 0.002,
+    "soft_joint_pos_limit_factor": 0.95
+}

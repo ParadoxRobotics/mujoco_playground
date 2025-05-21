@@ -39,6 +39,7 @@
       <camera name="track" mode="trackcom" pos="0 -3.0 0.8170777382037414" xyaxes="1 0 0 0 0 1" />
       <geom type="mesh" rgba="0.9098 0.44314 0.031373 1" mesh="BODY" class="visualgeom" />
       <inertial pos="-0.00035 0.00081 0.03798" quat="0.70710678 0. 0. 0.70710678" mass="0.92059" diaginertia="0.00577547 0.00468576 0.00266097"/>
+      <!--<inertial pos="-0.00035 0.00081 0.03798" quat="0.5 0.5 0.5 0.5" mass="0.92059" diaginertia="0.00577547 0.00468576 0.00266097"/> -->
       <body name="HIP_LEFT" pos="0 0.01425 -0.0436">
         <inertial pos="0.00185 0.05284 0.02786" quat="1 0 0 0" mass="0.101" diaginertia="4.61603e-05 4.12116e-05 2.96353e-05" />
         <joint name="left_hip_yaw" pos="0 0 0" axis="0 0 1" range="-0.37899 0.37899" actuatorfrcrange="-4.1 4.1" damping="1.084" armature="0.045" frictionloss="0.03" />

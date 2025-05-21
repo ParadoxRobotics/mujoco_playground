@@ -2,7 +2,7 @@
 	<!-- 100 hz -->
 	<!-- <option timestep="0.01"/> -->
 	<!-- <statistic center="0 0 0.55" extent="1.1" /> -->
-	<include file="BD-5_V3.xml" />
+	<include file="BD-5_V4_corrected.xml" />
 	<default>
 		<!-- sliding friction, torsional friction, rolling friction -->
 		<!-- <geom friction="3.0 0.1 0.006"/> -->

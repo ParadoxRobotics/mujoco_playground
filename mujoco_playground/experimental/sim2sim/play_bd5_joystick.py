@@ -44,6 +44,7 @@ class OnnxController:
       vel_range_rot: float = [-1.0, 1.0],
       gait_freq:float = 1.0,
       max_motor_speed: float = 4.82,
+      action_filter: bool = False,
   ):
     self._output_names = ["continuous_actions"]
     self._policy = rt.InferenceSession(
@@ -61,6 +62,8 @@ class OnnxController:
     self.max_motor_speed = max_motor_speed
     self.motor_targets = self._default_angles
     self.prev_motor_targets = self._default_angles
+    self.exp_filter = action_filter
+    self.prev_filter_state = self._default_angles
 
     # Time management
     self._counter = 0
@@ -77,7 +80,7 @@ class OnnxController:
         vel_range_x=vel_range_x,
         vel_range_y=vel_range_y,
         vel_range_rot=vel_range_rot,
-        deadzone=0.05,
+        deadzone=0.09,
     )
 
   def get_obs(self, model, data) -> np.ndarray:
@@ -85,6 +88,9 @@ class OnnxController:
     gyro = data.sensor("gyro").data
     # get accelerometer
     accelerometer = data.sensor("accelerometer").data
+    # get gravity
+    imu_xmat = data.site_xmat[model.site("imu").id].reshape(3, 3)
+    gravity = imu_xmat.T @ np.array([0, 0, -1])
     # get joint angles delta and velocities
     joint_angles = data.qpos[7:] - self._default_angles
     joint_velocities = data.qvel[6:]
@@ -97,6 +103,7 @@ class OnnxController:
     obs = np.hstack([
         gyro,
         accelerometer,
+        gravity,
         command,
         joint_angles,
         joint_velocities,
@@ -121,11 +128,18 @@ class OnnxController:
       self._last_action = onnx_pred.copy()
       # update motor targets -> in real case self._ctrl_dt = self._n_substeps * self._sim_dt
       self.motor_targets = onnx_pred * self._action_scale + self._default_angles
-      self.motor_targets = np.clip(self.motor_targets, 
-                                self.prev_motor_targets - self.max_motor_speed * (self._ctrl_dt),
-                                self.prev_motor_targets + self.max_motor_speed * (self._ctrl_dt)
-                                )
-      self.prev_motor_targets = self.motor_targets.copy()
+      # filter action 
+      if self.exp_filter:
+        filter_state = 0.8 * self.prev_filter_state + 0.2 * self.motor_targets
+        self.prev_filter_state = filter_state.copy()
+        self.motor_targets = filter_state
+      # clip speed 
+      if self.max_motor_speed is not None:
+        self.motor_targets = np.clip(self.motor_targets, 
+                                  self.prev_motor_targets - self.max_motor_speed * (self._ctrl_dt),
+                                  self.prev_motor_targets + self.max_motor_speed * (self._ctrl_dt)
+                                  )
+      self.prev_motor_targets = self.motor_targets.copy() 
       # apply control
       data.ctrl[:] = self.motor_targets
       # update phase 
@@ -155,11 +169,12 @@ def load_callback(model=None, data=None):
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
       action_scale=0.3,
-      vel_range_x = [-0.6, 0.6],
-      vel_range_y = [-0.4, 0.4],
+      vel_range_x = [-0.6, 1.5],
+      vel_range_y = [-0.8, 0.8],
       vel_range_rot = [-1.0, 1.0],
       gait_freq=1.0,
-      max_motor_speed=4.82,
+      max_motor_speed=4.50,
+      action_filter=False
   )
 
   mujoco.set_mjcb_control(policy.get_control)
