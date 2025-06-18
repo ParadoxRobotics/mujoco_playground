@@ -33,20 +33,18 @@ from mujoco_playground._src.locomotion.bd5 import base as bd5_base
 from mujoco_playground._src.locomotion.bd5 import bd5_constants as consts
 
 CLIP_MOTOR_SPEED = True
-ADD_BACKLASH = True
 
 def default_config() -> config_dict.ConfigDict:
   return config_dict.create(
       ctrl_dt=0.02,
-      sim_dt=0.002, 
+      sim_dt=0.002,
       episode_length=1000,
       action_repeat=1,
-      action_scale=0.35, # OK 0.3 or 0.35
+      action_scale=0.3, # OK
       dof_vel_scale=1.0,
-      history_len=5, # stacked observation memory -> t=5 like deepmind OP3
+      history_len=1,
       soft_joint_pos_limit_factor=0.95,
-      max_motor_velocity=4.82, # clip motor velocity at 4.82 at 12.0V and 4.50 at 11.1V
-      backlash_level=0.00872665, # amount of backlash in the joint 
+      max_motor_velocity=4.50, # clip motor velocity at 4.82 at 12.0V or 3.8 nominal at 11.1V
       noise_config=config_dict.create(
           level=1.0,  # Set to 0.0 to disable noise.
           action_min_delay=0,  # env steps
@@ -54,60 +52,62 @@ def default_config() -> config_dict.ConfigDict:
           obs_min_delay=0,  # env steps
           obs_max_delay=1,  # env steps
           scales=config_dict.create(
-              hip_pos=0.04, # was 0.03
-              knee_pos=0.06, # was 0.05
-              ankle_pos=0.09, # was 0.08
-              joint_vel=2.5, # 1.5
-              gravity=0.1, 
+              hip_pos=0.03,
+              knee_pos=0.03,
+              ankle_pos=0.03,
+              joint_vel=1.5, # 1.5
+              gravity=0.05, # 0.1
               linvel=0.1,
-              gyro=0.15,
-              accelerometer=0.15,
+              gyro=0.2,
+              accelerometer=0.2,
           ),
       ),
       reward_config=config_dict.create(
           scales=config_dict.create(
-              # Tracking relatd reward
-              tracking_lin_vel=2.0, # follow the joystick command x, y 1.0
-              tracking_ang_vel=0.8, # follow the joystick command theta 0.5 or 0.8
+              # Tracking related reward
+              tracking_lin_vel=4.0, # follow the joystick command x, y 1.0
+              tracking_ang_vel=1.0, # follow the joystick command theta 0.5 or 0.8
               # Base related rewards.
-              lin_vel_z=-2.0, # OK -2.0 or 0.0
-              ang_vel_xy=-0.15, # OK -0.15 or -0.05 
-              orientation=-5.0, # OK -5.0 or -1.0
+              lin_vel_z=0.0, # OK -2.0 or 0.0
+              ang_vel_xy=-0.15, # OK -0.15 or -0.05
+              orientation=-5.0, # OK -5.0
               base_height=0.0, # OK 0.0
               # Energy related rewards.
-              torques=-1e-3, # penalize high torques -0.0002 or 1e-5
-              action_rate=-0.02, # penalize rapid changes in action -0.001 or -0.01
-              energy=0.0, # penalize energy consumption -0.0001 or -2e-5
+              torques=0.0, # penalize high torques -0.0002
+              action_rate=0.0, # penalize rapid changes in action -0.001
+              energy=0.0, # penalize ernergy consumption -0.0001 / -2e-5
               # Feet related rewards.
               feet_clearance=0.0, # -> was -0.5
               feet_air_time=2.0, # was 2.0 
-              feet_slip=-0.5, # was -0.25 similar to feet_drag 
-              feet_drag=-1.0, # was -1.5
+              feet_slip=-0.25, # was -0.25 similar to feet_drag 
+              feet_drag=0.0, # was -1.5 
               feet_height=0.0,
-              feet_impact=0.0,
-              feet_phase=1.0, # was 1.0
+              feet_phase=1.0, # was 1.0 
+              foot_lift_reward=0.0, # reward when z_vel > 0 during swing 
+              swing_symmetry=0.0, # encourage symmetric gait 
               # Other rewards.
-              stand_still=-0.5, # penalize when command = 0
-              alive=0.25,
+              stand_still=0.0, # penalize when command = 0
+              alive=2.0,
               termination=-1.0,
               # Pose related rewards.
+              joint_deviation_ankle=0.0, # was -0.25
               joint_deviation_knee=-0.1, # was -0.1
-              joint_deviation_hip=-0.25, # was -0.25
+              joint_deviation_hip=-0.1, # was -0.25
               dof_pos_limits=-1.0,
-              pose=0.0, # TEST IT (was -1.0)
+              pose=-1.0, # TEST IT (was -1.0) 
           ),
-          tracking_sigma=0.25, # OK 0.25 for a velocity range of [-1.0, 1.0]
-          max_foot_height=0.04,
+          tracking_sigma=0.25, # OK
+          max_foot_height=0.05,
           base_height_target=0.224,
       ),
       push_config=config_dict.create(
           enable=True,
           interval_range=[5.0, 10.0],
-          magnitude_range=[0.1, 1.0],
+          magnitude_range=[0.1, 2.0],
       ),
-      lin_vel_x=[-0.4, 0.6],
-      lin_vel_y=[-0.4, 0.4],
-      ang_vel_yaw=[-0.8, 0.8],
+        lin_vel_x=[-0.15, 0.15],
+        lin_vel_y=[-0.2, 0.2],
+        ang_vel_yaw=[-0.8, 0.8],
   )
 
 class Joystick(bd5_base.BD5Env):
@@ -131,7 +131,7 @@ class Joystick(bd5_base.BD5Env):
         self._init_q = jp.array(self._mj_model.keyframe("init_pose").qpos)
         print(self._init_q)
         self._default_pose = jp.array(self._mj_model.keyframe("init_pose").qpos[7:])
-        print(self._default_pose)
+
         # Get the range of the joints
         # Note: First joint is freejoint.
         self._lowers, self._uppers = self.mj_model.jnt_range[1:].T
@@ -151,15 +151,15 @@ class Joystick(bd5_base.BD5Env):
         # fmt: off
         self._weights = jp.array(
             [
-                1.0, # left_hip_yaw 0
+                2.0, # left_hip_yaw 0
                 1.0, # left_hip_roll 1
-                1.0, # left_hip_pitch 2
-                1.0, # left_knee 3
+                0.01, # left_hip_pitch 2
+                0.01, # left_knee 3
                 1.0, # left_ankle 4
-                1.0, # right_hip_yaw 5 
+                2.0, # right_hip_yaw 5 
                 1.0, # right_hip_roll 6
-                1.0, # right_hip_pitch 7
-                1.0, # right_knee 8
+                0.01, # right_hip_pitch 7
+                0.01, # right_knee 8
                 1.0, # right_ankle 9
             ]
         )
@@ -193,8 +193,6 @@ class Joystick(bd5_base.BD5Env):
         qpos_noise_scale[ankle_ids] = self._config.noise_config.scales.ankle_pos
         self._qpos_noise_scale = jp.array(qpos_noise_scale)
 
-        self.nominal_backlash_per_joint = jp.full(self._nb_actuators, self._config.backlash_level)
-
     def reset(self, rng: jax.Array) -> mjx_env.State:
         # Init position / velocity state 
         qpos = self._init_q
@@ -225,7 +223,7 @@ class Joystick(bd5_base.BD5Env):
 
         # Phase, freq=U(1.25, 1.5)
         rng, key = jax.random.split(rng)
-        gait_freq = jax.random.uniform(key, (1,), minval=0.8, maxval=1.25)
+        gait_freq = jax.random.uniform(key, (1,), minval=1.25, maxval=1.75)
         phase_dt = 2 * jp.pi * self.dt * gait_freq
         phase = jp.array([0, jp.pi])
 
@@ -249,8 +247,7 @@ class Joystick(bd5_base.BD5Env):
             "last_act": jp.zeros(self.mjx_model.nu),
             "last_last_act": jp.zeros(self.mjx_model.nu),
             "last_last_last_act": jp.zeros(self.mjx_model.nu),
-            "backlash_output_position": self._default_pose.copy(),
-            "motor_targets": self._default_pose.copy(),
+            "motor_targets": self._default_pose,
             "feet_air_time": jp.zeros(2),
             "last_contact": jp.zeros(2, dtype=bool),
             "swing_peak": jp.zeros(2),
@@ -263,7 +260,7 @@ class Joystick(bd5_base.BD5Env):
             "push_interval_steps": push_interval_steps,
             # History related.
             "action_history": jp.zeros(self._config.noise_config.action_max_delay * self._nb_actuators),
-            "obs_history": jp.zeros(self._config.history_len * 36) # Eww hardcoded ! 32 whithout phase or 33 without gravity
+            "obs_history": jp.zeros(self._config.noise_config.obs_max_delay * 66) # Eww hardcoded !
         }
 
         metrics = {}
@@ -278,19 +275,6 @@ class Joystick(bd5_base.BD5Env):
 
         return mjx_env.State(data, obs, reward, done, metrics, info)
 
-    def _single_joint_backlash(self, input_target, prev_out, b_amount):
-        new_out = prev_out  # Assume stuck in deadband initially
-        # Check if input has moved enough to engage gears in positive direction
-        cond_pos = input_target > prev_out + b_amount / 2.0
-        new_out_pos = input_target - b_amount / 2.0
-        # Check if input has moved enough to engage gears in negative direction
-        cond_neg = input_target < prev_out - b_amount / 2.0
-        new_out_neg = input_target + b_amount / 2.0
-        # Apply conditions
-        new_out = jp.where(cond_pos, new_out_pos, new_out)
-        new_out = jp.where(cond_neg, new_out_neg, new_out)
-        return new_out
-        
     def step(self, state: mjx_env.State, action: jax.Array) -> mjx_env.State:
         # Split the rng seed
         state.info["rng"], push1_rng, push2_rng, action_delay_rng = jax.random.split(state.info["rng"], 4)
@@ -339,18 +323,10 @@ class Joystick(bd5_base.BD5Env):
                                     prev_motor_targets + self._config.max_motor_velocity * self.dt
                                     )
 
-        # Add backlash 
-        if ADD_BACKLASH:
-            prev_backlash_output = state.info["backlash_output_position"]
-            motor_targets = self._single_joint_backlash(
-                motor_targets, prev_backlash_output, self.nominal_backlash_per_joint
-            )
-            state.info["backlash_output_position"] = motor_targets.copy()
-
         # env step 
         data = mjx_env.step(self.mjx_model, state.data, motor_targets, self.n_substeps)
         # memory update 
-        state.info["motor_targets"] = motor_targets.copy()
+        state.info["motor_targets"] = motor_targets
 
         # Contact phase
         contact = jp.array([geoms_colliding(data, geom_id, self._floor_geom_id) for geom_id in self._feet_geom_id])
@@ -409,7 +385,7 @@ class Joystick(bd5_base.BD5Env):
         fall_termination = self.get_gravity(data)[-1] < 0.0
         return fall_termination | jp.isnan(data.qpos).any() | jp.isnan(data.qvel).any()
     
-    def _get_obs(self, data: mjx.Data, info: dict[str, Any], contact: jax.Array) -> mjx_env.Observation:
+    def _get_single_obs(self, data: mjx.Data, info: dict[str, Any], contact: jax.Array) -> mjx_env.Observation:
         # Noisy gyro -> raw gyro measurement IMU sensor
         gyro = self.get_gyro(data)
         info["rng"], noise_rng = jax.random.split(info["rng"])
@@ -465,28 +441,23 @@ class Joystick(bd5_base.BD5Env):
         sin = jp.sin(info["phase"])
         phase = jp.concatenate([cos, sin])
 
-        # Real robot state observation n=36 * history len 
+        # Real robot state observation n=63
         state = jp.hstack(
             [
                 noisy_gyro,  # 3 (gx, gy, gz)
-                noisy_accelerometer, # (ax, ay, az)
+                noisy_accelerometer,  # 3 (ax, ay, az)
                 noisy_gravity, # 3 (grx, gry, grz)
                 info["command"],  # 3 (Vx, Vy, Vyaw)
                 noisy_joint_angles - self._default_pose,  # NUM_JOINTS
+                noisy_joint_vel * self._config.dof_vel_scale,  # NUM_JOINTS
                 info["last_act"],  # NUM_JOINTS
-                phase, # 4 (cos(th1, th2), sin(th1, th2)) 
+                info["last_last_act"],  # NUM_JOINTS
+                info["last_last_last_act"],  # NUM_JOINTS
+                phase, # 4 (cos(th1, th2), sin(th1, th2)) # TODO : add back the phase if needed
             ]
         )
 
-        # get size 
-        state_size = state.shape[0]
-        # fill the buffer
-        state_history = (
-            jp.roll(info["obs_history"], state_size).at[:state_size].set(state)
-        )
-        info["obs_history"] = state_history
-
-        # Prileged observation -> non-noisy state observation
+        # Prileged obsevation -> non-noisy state observation
         linvel = self.get_local_linvel(data)
         global_angvel = self.get_global_angvel(data)
         feet_vel = data.sensordata[self._foot_linvel_sensor_adr].ravel()
@@ -495,7 +466,7 @@ class Joystick(bd5_base.BD5Env):
         # Simulated robot full state observation
         privileged_state = jp.hstack(
             [
-                state_history, # state_size * history_len
+                state,
                 gyro,  # 3
                 accelerometer,  # 3
                 gravity,  # 3
@@ -512,9 +483,32 @@ class Joystick(bd5_base.BD5Env):
         )
 
         return {
-            "state": state_history,
+            "state": state,
             "privileged_state": privileged_state,
         }
+    
+    def _get_obs(self, data: mjx.Data, info: dict[str, Any], contact: jax.Array) -> mjx_env.Observation:
+        obs = self._get_single_obs(data, info, contact)
+        # edit only the true robot state 
+        obs_size = obs["state"].shape[0]
+
+        # fill the buffer
+        obs_history = (
+            jp.roll(info["obs_history"], obs_size).at[:obs_size].set(obs["state"])
+        )
+        info["obs_history"] = obs_history
+
+        # add observation delay
+        info["rng"], key = jax.random.split(info["rng"])
+        obs_delay_idx = jax.random.randint(
+            key,
+            (1,),
+            minval=self._config.noise_config.obs_min_delay,
+            maxval=self._config.noise_config.obs_max_delay,
+        )
+        obs["state"] = obs_history.reshape((-1, obs_size))[obs_delay_idx[0]]
+        # delayed observation
+        return obs
 
     def _get_reward(
         self,
@@ -541,18 +535,19 @@ class Joystick(bd5_base.BD5Env):
             "action_rate": self._cost_action_rate(action, info["last_act"], info["last_last_act"]),
             "energy": self._cost_energy(data.qvel[6:], data.actuator_force),
             # Feet related rewards.
-            "feet_clearance": self._cost_feet_clearance(data, contact),
+            "feet_clearance": self._cost_feet_clearance(data, info),
             "feet_slip": self._cost_feet_slip(data, contact, info),
+            "feet_drag": self._reward_feet_drag(data, contact),
             "feet_height": self._cost_feet_height(info["swing_peak"], first_contact, info),
             "feet_air_time": self._reward_feet_air_time(info["feet_air_time"], first_contact, info["command"]),
-            "feet_drag": self._reward_feet_drag(data, contact),
-            "feet_impact": self._cost_foot_impact(data, first_contact),
             "feet_phase": self._reward_feet_phase(
                 data,
                 info["phase"],
                 self._config.reward_config.max_foot_height,
                 info["command"],
             ),
+            "swing_symmetry": self._reward_swing_symmetry(data, contact, info["command"]),
+            "foot_lift_reward": self._reward_foot_lift_velocity(data, contact, info["command"]),
             # Other rewards.
             "alive": self._reward_alive(),
             "termination": self._cost_termination(done),
@@ -560,17 +555,20 @@ class Joystick(bd5_base.BD5Env):
             # Pose related rewards.
             "joint_deviation_hip": self._cost_joint_deviation_hip(data.qpos[7:], info["command"]),
             "joint_deviation_knee": self._cost_joint_deviation_knee(data.qpos[7:]),
+            "joint_deviation_ankle": self._cost_joint_deviation_ankle(data.qpos[7:]),
             "dof_pos_limits": self._cost_joint_pos_limits(data.qpos[7:]),
             "pose": self._cost_pose(data.qpos[7:]),
         }
-    
+
     def _reward_tracking_lin_vel(
         self,
         commands: jax.Array,
         local_vel: jax.Array,
     ) -> jax.Array:
-        # Tracking of linear velocity commands (xy axes).
-        lin_vel_error = jp.sum(jp.square(commands[:2] - local_vel[:2]))
+        y_tol = 0.1
+        error_x = jp.square(commands[0] - local_vel[0])
+        error_y = jp.clip(jp.abs(local_vel[1] - commands[1]) - y_tol, 0.0, None)
+        lin_vel_error = error_x + jp.square(error_y)
         reward = jp.exp(-lin_vel_error / self._config.reward_config.tracking_sigma)
         return jp.nan_to_num(reward)
 
@@ -646,14 +644,21 @@ class Joystick(bd5_base.BD5Env):
         return jp.nan_to_num(jp.sum(jp.square(qpos - self._default_pose) * self._weights))
 
     # Feet related rewards.
+    """
+    def _cost_feet_slip(self, data: mjx.Data, contact: jax.Array, info: dict[str, Any]) -> jax.Array:
+        del info  # Unused.
+        body_vel = self.get_global_linvel(data)[:2]
+        reward = jp.sum(jp.linalg.norm(body_vel, axis=-1) * contact)
+        return jp.nan_to_num(reward)
+    """
     def _cost_feet_slip(self, data: mjx.Data, contact: jax.Array, info: dict[str, Any]) -> jax.Array:
         del info  # Unused.
         feet_vel = data.sensordata[self._foot_linvel_sensor_adr]
         vel_xy = feet_vel[..., :2]
         vel_xy_norm_sq = jp.sum(jp.square(vel_xy), axis=-1)
-        reward = jp.sum(vel_xy_norm_sq * contact)
+        reward = jp.sum(jp.linalg.norm(vel_xy_norm_sq, axis=-1) * contact)
         return jp.nan_to_num(reward)
-
+    
     def _reward_feet_drag(self, data: mjx.Data, contact: jax.Array) -> jax.Array:
         feet_vel = data.sensordata[self._foot_linvel_sensor_adr]
         feet_vel_xy = feet_vel[..., :2]
@@ -662,7 +667,8 @@ class Joystick(bd5_base.BD5Env):
         # Normalize with a softmax-like transformation
         return jp.nan_to_num(jp.sum(1.0 - jp.exp(-feet_vel_norm * 10.0)))
 
-    def _cost_feet_clearance(self, data: mjx.Data, contact: jax.Array) -> jax.Array:
+    def _cost_feet_clearance(self, data: mjx.Data, info: dict[str, Any]) -> jax.Array:
+        del info  # Unused.
         feet_vel = data.sensordata[self._foot_linvel_sensor_adr]
         vel_xy = feet_vel[..., :2]
         vel_norm = jp.sqrt(jp.linalg.norm(vel_xy, axis=-1))
@@ -686,25 +692,43 @@ class Joystick(bd5_base.BD5Env):
         air_time: jax.Array,
         first_contact: jax.Array,
         commands: jax.Array,
-        threshold_min: float = 0.3,
-        threshold_max: float = 0.8,
+        threshold_min: float = 0.2,
+        threshold_max: float = 0.5,
     ) -> jax.Array:
-        cmd_norm = jp.linalg.norm(commands)
+        del commands
         air_time = (air_time - threshold_min) * first_contact
         air_time = jp.clip(air_time, max=threshold_max - threshold_min)
         reward = jp.sum(air_time)
-        reward += -jp.square(air_time[0] - air_time[1])
-        reward *= cmd_norm > 0.01  # No reward for zero commands.
+        reward += -jp.square(air_time[0] - air_time[1]) # TODO : try this ? 
         return jp.nan_to_num(reward)
 
-    def _cost_foot_impact(self, data: mjx.Data, first_contact: jax.Array) -> jax.Array:
-        """Penalizes high vertical velocity of the feet upon landing."""
-        feet_vel = data.sensordata[self._foot_linvel_sensor_adr]
-        # Get the vertical velocity (Z-axis is index 2) in the world frame
-        vertical_vel_z = feet_vel[..., 2]
-        # We only care about the squared velocity when first_contact is true
-        impact_cost = jp.sum(jp.square(vertical_vel_z) * first_contact)
-        return jp.nan_to_num(impact_cost)
+    def _reward_foot_lift_velocity(
+            self, 
+            data: mjx.Data,
+            contact: jax.Array, 
+            commands: jax.Array
+        ) -> jax.Array:
+        # Encourage upward velocity when foot is not in contact
+        cmd_norm = jp.linalg.norm(commands)
+        foot_vels = data.sensordata[self._foot_linvel_sensor_adr].reshape(2, 3)
+        upward_vel = jp.clip(foot_vels[:, 2], 0.0, 1.0)  # only reward upward Z
+        not_in_contact = 1.0 - contact
+        mask = jp.clip(cmd_norm / 0.01, 0.0, 1.0)
+        return jp.nan_to_num(jp.sum(upward_vel * not_in_contact) * mask)
+
+    def _reward_swing_symmetry(
+            self, 
+            data: mjx.Data, 
+            contact: jax.Array,
+            commands: jax.Array
+        ) -> jax.Array:
+        # Encourage mirroring swing (velocities) when both feet are off ground
+        cmd_norm = jp.linalg.norm(commands)
+        foot_vels = data.sensordata[self._foot_linvel_sensor_adr].reshape(2, 3)
+        swing_phase = (1.0 - contact) > 0.5
+        diff = foot_vels[0] + foot_vels[1]  # they should be opposites
+        mask = jp.clip(cmd_norm / 0.01, 0.0, 1.0)
+        return jp.nan_to_num(jp.where(jp.logical_and(swing_phase[0], swing_phase[1]), -jp.sum(jp.square(diff)), 0.0) * mask)
 
     def _reward_feet_phase(
         self,

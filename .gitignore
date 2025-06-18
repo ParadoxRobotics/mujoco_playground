@@ -4,3 +4,4 @@ __pycache__
 .venv
 MUJOCO_LOG.TXT
 mujoco_menagerie
+checkpoints/

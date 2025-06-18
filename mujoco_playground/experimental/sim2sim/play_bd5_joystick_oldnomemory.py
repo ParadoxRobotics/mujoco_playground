@@ -43,10 +43,8 @@ class OnnxController:
       vel_range_y: float = [-1.0, 1.0],
       vel_range_rot: float = [-1.0, 1.0],
       gait_freq:float = 1.0,
-      max_motor_speed: float = 4.50,
-      history_len: int = 5,
+      max_motor_speed: float = 4.82,
       action_filter: bool = False,
-      grav_enable: bool = True
   ):
     self._output_names = ["continuous_actions"]
     self._policy = rt.InferenceSession(
@@ -57,13 +55,8 @@ class OnnxController:
     self._action_scale = action_scale
     self._default_angles = default_angles
     self._last_action = np.zeros_like(default_angles, dtype=np.float32)
-
-    # Init observation 
-    self.grav_enable = grav_enable
-    if self.grav_enable:
-      self.obs_history = np.zeros(36 * history_len)
-    else:
-      self.obs_history = np.zeros(32 * history_len)
+    self._last_last_action = np.zeros_like(default_angles, dtype=np.float32)
+    self._last_last_last_action = np.zeros_like(default_angles, dtype=np.float32)
 
     # Init motor targets
     self.max_motor_speed = max_motor_speed
@@ -87,7 +80,7 @@ class OnnxController:
         vel_range_x=vel_range_x,
         vel_range_y=vel_range_y,
         vel_range_rot=vel_range_rot,
-        deadzone=0.02,
+        deadzone=0.09,
     )
 
   def get_obs(self, model, data) -> np.ndarray:
@@ -95,46 +88,31 @@ class OnnxController:
     gyro = data.sensor("gyro").data
     # get accelerometer
     accelerometer = data.sensor("accelerometer").data
-    if self.grav_enable:
-      # get gravity
-      imu_xmat = data.site_xmat[model.site("imu").id].reshape(3, 3)
-      gravity = imu_xmat.T @ np.array([0, 0, -1])
+    # get gravity
+    imu_xmat = data.site_xmat[model.site("imu").id].reshape(3, 3)
+    gravity = imu_xmat.T @ np.array([0, 0, -1])
     # get joint angles delta and velocities
     joint_angles = data.qpos[7:] - self._default_angles
-    #joint_velocities = data.qvel[6:]
+    joint_velocities = data.qvel[6:]
     # get command
     command = self._joystick.get_command()
     # adjust phase
     ph = self._phase if np.linalg.norm(command) >= 0.01 else np.ones(2) * np.pi
     phase = np.concatenate([np.cos(ph), np.sin(ph)])
-
-    if self.grav_enable:
-      # concatenate all
-      obs = np.hstack([
-          gyro,
-          accelerometer,
-          gravity,
-          command,
-          joint_angles,
-          self._last_action,
-          phase,
-      ])
-    else:
-      # concatenate all
-      obs = np.hstack([
-          gyro,
-          accelerometer,
-          command,
-          joint_angles,
-          self._last_action,
-          phase,
-      ])      
-    # update history memory
-    state_size = obs.shape[0]
-    # fill the buffer
-    self.obs_history = np.roll(self.obs_history, state_size)
-    self.obs_history[:state_size] = obs
-    return self.obs_history.astype(np.float32)
+    # concatenate all
+    obs = np.hstack([
+        gyro, # 3 (0,1,2)
+        accelerometer, # 3 (3,4,5)
+        gravity, # 3 (6,7,8)
+        command, # 3 (9,10,11)
+        joint_angles, # 10 (12,13,14,15,16,17,18,19,20,21)
+        joint_velocities, # 10 (22,23,24,25,26,27,28,29,30,31)
+        self._last_action, # 10
+        self._last_last_action, # 10
+        self._last_last_last_action, # 10
+        phase, # 4
+    ])
+    return obs.astype(np.float32)
 
   def get_control(self, model: mujoco.MjModel, data: mujoco.MjData) -> None:
     self._counter += 1
@@ -145,6 +123,8 @@ class OnnxController:
       onnx_input = {"obs": obs.reshape(1, -1)}
       onnx_pred = self._policy.run(self._output_names, onnx_input)[0][0]
       # update action memory
+      self._last_last_last_action = self._last_last_action.copy()
+      self._last_last_action = self._last_action.copy()
       self._last_action = onnx_pred.copy()
       # update motor targets -> in real case self._ctrl_dt = self._n_substeps * self._sim_dt
       self.motor_targets = onnx_pred * self._action_scale + self._default_angles
@@ -165,7 +145,6 @@ class OnnxController:
       # update phase 
       phase_tp1 = self._phase + self._phase_dt
       self._phase = np.fmod(phase_tp1 + np.pi, 2 * np.pi) - np.pi
-
 
 
 def load_callback(model=None, data=None):
@@ -189,14 +168,13 @@ def load_callback(model=None, data=None):
       default_angles=np.array(model.keyframe("init_pose").qpos[7:]),
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
-      action_scale=0.35,
-      vel_range_x = [-0.4, 0.6],
-      vel_range_y = [-0.4, 0.4],
-      vel_range_rot = [-0.8, 0.8],
+      action_scale=0.3,
+      vel_range_x = [-0.6, 1.5],
+      vel_range_y = [-0.8, 0.8],
+      vel_range_rot = [-1.0, 1.0],
       gait_freq=1.0,
-      max_motor_speed=4.82,
-      action_filter=False,
-      grav_enable=True,
+      max_motor_speed=4.50,
+      action_filter=False
   )
 
   mujoco.set_mjcb_control(policy.get_control)

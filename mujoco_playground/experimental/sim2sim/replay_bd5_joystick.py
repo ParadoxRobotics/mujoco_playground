@@ -34,19 +34,14 @@ class OnnxController:
 
   def __init__(
       self,
+      data_path: str,
       policy_path: str,
       default_angles: np.ndarray,
       ctrl_dt: float,
       n_substeps: int,
       action_scale: float = 0.3,
-      vel_range_x: float = [-1.0, 1.0],
-      vel_range_y: float = [-1.0, 1.0],
-      vel_range_rot: float = [-1.0, 1.0],
-      gait_freq:float = 1.0,
-      max_motor_speed: float = 4.50,
-      history_len: int = 5,
+      max_motor_speed: float = 4.82,
       action_filter: bool = False,
-      grav_enable: bool = True
   ):
     self._output_names = ["continuous_actions"]
     self._policy = rt.InferenceSession(
@@ -56,14 +51,6 @@ class OnnxController:
     # Init action scale and memory
     self._action_scale = action_scale
     self._default_angles = default_angles
-    self._last_action = np.zeros_like(default_angles, dtype=np.float32)
-
-    # Init observation 
-    self.grav_enable = grav_enable
-    if self.grav_enable:
-      self.obs_history = np.zeros(36 * history_len)
-    else:
-      self.obs_history = np.zeros(32 * history_len)
 
     # Init motor targets
     self.max_motor_speed = max_motor_speed
@@ -77,64 +64,19 @@ class OnnxController:
     self._n_substeps = n_substeps
     self._ctrl_dt = ctrl_dt
 
-    # Phase init -> in real case self._ctrl_dt = self._n_substeps * self._sim_dt
-    self._phase = np.array([0.0, np.pi])
-    self._gait_freq = gait_freq
-    self._phase_dt = 2 * np.pi * self._gait_freq * self._ctrl_dt 
-
-    # Init joystick
-    self._joystick = Gamepad(
-        vel_range_x=vel_range_x,
-        vel_range_y=vel_range_y,
-        vel_range_rot=vel_range_rot,
-        deadzone=0.02,
-    )
+    self.data_log = np.load(data_path)
+    self.nb_data_log = self.data_log.shape[0] - 1
+    self.log_step = 0
+    self.error = []
 
   def get_obs(self, model, data) -> np.ndarray:
-    # get gyro
-    gyro = data.sensor("gyro").data
-    # get accelerometer
-    accelerometer = data.sensor("accelerometer").data
-    if self.grav_enable:
-      # get gravity
-      imu_xmat = data.site_xmat[model.site("imu").id].reshape(3, 3)
-      gravity = imu_xmat.T @ np.array([0, 0, -1])
-    # get joint angles delta and velocities
-    joint_angles = data.qpos[7:] - self._default_angles
-    #joint_velocities = data.qvel[6:]
-    # get command
-    command = self._joystick.get_command()
-    # adjust phase
-    ph = self._phase if np.linalg.norm(command) >= 0.01 else np.ones(2) * np.pi
-    phase = np.concatenate([np.cos(ph), np.sin(ph)])
-
-    if self.grav_enable:
-      # concatenate all
-      obs = np.hstack([
-          gyro,
-          accelerometer,
-          gravity,
-          command,
-          joint_angles,
-          self._last_action,
-          phase,
-      ])
+    # get data from file :
+    if self.log_step < self.nb_data_log:
+        obs = self.data_log[self.log_step, :]
+        self.log_step += 1
     else:
-      # concatenate all
-      obs = np.hstack([
-          gyro,
-          accelerometer,
-          command,
-          joint_angles,
-          self._last_action,
-          phase,
-      ])      
-    # update history memory
-    state_size = obs.shape[0]
-    # fill the buffer
-    self.obs_history = np.roll(self.obs_history, state_size)
-    self.obs_history[:state_size] = obs
-    return self.obs_history.astype(np.float32)
+      obs = np.zeros_like(self.data_log[0, :])
+    return obs.astype(np.float32)
 
   def get_control(self, model: mujoco.MjModel, data: mujoco.MjData) -> None:
     self._counter += 1
@@ -144,8 +86,6 @@ class OnnxController:
       # run policy
       onnx_input = {"obs": obs.reshape(1, -1)}
       onnx_pred = self._policy.run(self._output_names, onnx_input)[0][0]
-      # update action memory
-      self._last_action = onnx_pred.copy()
       # update motor targets -> in real case self._ctrl_dt = self._n_substeps * self._sim_dt
       self.motor_targets = onnx_pred * self._action_scale + self._default_angles
       # filter action 
@@ -162,10 +102,6 @@ class OnnxController:
       self.prev_motor_targets = self.motor_targets.copy() 
       # apply control
       data.ctrl[:] = self.motor_targets
-      # update phase 
-      phase_tp1 = self._phase + self._phase_dt
-      self._phase = np.fmod(phase_tp1 + np.pi, 2 * np.pi) - np.pi
-
 
 
 def load_callback(model=None, data=None):
@@ -185,18 +121,14 @@ def load_callback(model=None, data=None):
   model.opt.timestep = sim_dt
 
   policy = OnnxController(
+      data_path="/home/master/mujoco_playground/mujoco_playground/experimental/sim2sim/bd5_state.npy",
       policy_path=(_ONNX_DIR / "test.onnx").as_posix(),
       default_angles=np.array(model.keyframe("init_pose").qpos[7:]),
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
-      action_scale=0.35,
-      vel_range_x = [-0.4, 0.6],
-      vel_range_y = [-0.4, 0.4],
-      vel_range_rot = [-0.8, 0.8],
-      gait_freq=1.0,
-      max_motor_speed=4.82,
-      action_filter=False,
-      grav_enable=True,
+      action_scale=0.3,
+      max_motor_speed=4.50,
+      action_filter=False
   )
 
   mujoco.set_mjcb_control(policy.get_control)

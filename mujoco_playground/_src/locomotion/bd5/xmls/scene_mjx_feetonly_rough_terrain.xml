@@ -1,5 +1,5 @@
 <mujoco model="bd5 feetonly rough terrain scene">
-  <include file="BD-5_V4_corrected.xml"/>
+  <include file="BD-5_V6.xml"/>
 
   <statistic center="0 0 0.1" extent="0.8" meansize="0.04"/>
 
@@ -11,6 +11,7 @@
     <quality shadowsize="8192"/>
   </visual>
 
+
   <asset>
     <texture type="2d" name="groundplane" file="assets/lunar.png"/>
     <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance=".8"/>
@@ -18,35 +19,37 @@
   </asset>
 
   <worldbody>
-    <geom name="floor" type="hfield" hfield="hfield" material="groundplane" contype="1" conaffinity="0" priority="1"
-      friction="1.0"/>
+    <body name="floor">
+      <geom name="floor" type="hfield" hfield="hfield" material="groundplane" contype="1" conaffinity="0" priority="1"
+        friction="1.0"/>
+    </body>
   </worldbody>
 
   <keyframe>
     <key name="init_pose"
       qpos="
-      0 0 0.224
+      0 0 0.24
       1 0 0 0
       0.0
+      -0.0523599
+      0.8725738534323367
+      1.7451477068646735
+      0.8725738534323367
       0.0
-      0.82498
-      1.64996
-      0.82498
-      0.0
-      0.0
-      0.82498
-      1.64996
-      0.82498"
+      -0.0523599
+      0.8725738534323367
+      1.7451477068646735
+      0.8725738534323367"
       ctrl="
       0.0
+      -0.0523599
+      0.8725738534323367
+      1.7451477068646735
+      0.8725738534323367
       0.0
-      0.82498
-      1.64996
-      0.82498
-      0.0
-      0.0
-      0.82498
-      1.64996
-      0.82498"/>
+      -0.0523599
+      0.8725738534323367
+      1.7451477068646735
+      0.8725738534323367"/>
   </keyframe>
 </mujoco>
