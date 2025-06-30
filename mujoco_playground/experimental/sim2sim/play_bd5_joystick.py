@@ -179,7 +179,7 @@ def load_callback(model=None, data=None):
 
   mujoco.mj_resetDataKeyframe(model, data, 0)
 
-  ctrl_dt = 0.02
+  ctrl_dt = 0.02 # was 0.02 
   sim_dt = 0.002 # was 0.002
   n_substeps = int(round(ctrl_dt / sim_dt))
   model.opt.timestep = sim_dt
@@ -189,7 +189,7 @@ def load_callback(model=None, data=None):
       default_angles=np.array(model.keyframe("init_pose").qpos[7:]),
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
-      action_scale=0.35,
+      action_scale=0.3,
       vel_range_x = [-0.4, 0.6],
       vel_range_y = [-0.4, 0.4],
       vel_range_rot = [-0.8, 0.8],
